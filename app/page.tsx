@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 type Car = { id: number; name: string; type: string; plate: string; range: number; price: number; walk: number; color: string; x: number; y: number };
 const cars: Car[] = [
@@ -12,17 +12,56 @@ const cars: Car[] = [
 const filters = ['All cars', 'Electric', 'Comfort', 'SUV'];
 
 export default function Home() {
+  const [signedIn, setSignedIn] = useState(false);
+  const [email, setEmail] = useState('developer@carshare.local');
   const [filter, setFilter] = useState('All cars');
   const [selectedId, setSelectedId] = useState(1);
   const [reserved, setReserved] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const visibleCars = useMemo(() => cars.filter((car) => filter === 'All cars' || car.type === filter), [filter]);
   const selected = cars.find((car) => car.id === selectedId) ?? cars[0];
+
+  useEffect(() => {
+    setSignedIn(localStorage.getItem('carshare-dev-session') === 'active');
+  }, []);
+
+  function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    localStorage.setItem('carshare-dev-session', 'active');
+    setSignedIn(true);
+  }
+
+  function signOut() {
+    localStorage.removeItem('carshare-dev-session');
+    setSignedIn(false);
+  }
   function selectFilter(next: string) {
     setFilter(next);
     const first = cars.find((car) => next === 'All cars' || car.type === next);
     if (first) setSelectedId(first.id);
     setReserved(false);
+  }
+
+  if (!signedIn) {
+    return (
+      <main className="login-shell">
+        <div className="login-orb login-orb-one" /><div className="login-orb login-orb-two" /><div className="login-dots" />
+        <section className="login-card" aria-labelledby="login-title">
+          <div className="dev-badge"><span>●</span> Development mode</div>
+          <div className="login-brand"><span className="brand-mark">C</span><span>car<span>share</span></span></div>
+          <h1 id="login-title">Welcome back</h1>
+          <p>Use the temporary developer login to explore and test the app.</p>
+          <form onSubmit={signIn}>
+            <label htmlFor="dev-email">Developer email</label>
+            <input id="dev-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
+            <label htmlFor="dev-password">Password</label>
+            <input id="dev-password" type="password" defaultValue="carshare" required autoComplete="current-password" />
+            <button className="login-button" type="submit"><span>Enter development app</span><span className="arrow">→</span></button>
+          </form>
+          <div className="mock-note"><strong>Mock access only</strong><span>No account is created and no credentials leave this device.</span></div>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -33,7 +72,7 @@ export default function Home() {
         <div className="block block-a" /><div className="block block-b" /><div className="block block-c" />
         <header className="topbar">
           <div className="brand"><span className="brand-mark">C</span><span>car<span>share</span></span></div>
-          <button className="profile" aria-label="Open profile">N</button>
+          <button className="profile" aria-label="Sign out of development app" title="Sign out" onClick={signOut}>N</button>
         </header>
         <div className="search-wrap">
           <label className="search"><span aria-hidden="true">⌕</span><input aria-label="Search destination" placeholder="Where are you going?" /></label>
