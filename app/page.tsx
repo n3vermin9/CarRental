@@ -1,6 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { IconArrowLeft, IconBattery, IconCar, IconChevronRight, IconGauge, IconHeart, IconMapPin, IconRoute, IconShieldCheck, IconUsers, IconUser } from '@tabler/icons-react';
 
 type Car = { id: number; name: string; type: string; plate: string; range: number; price: number; walk: number; color: string; image: string; x: number; y: number };
 const cars: Car[] = [
@@ -10,6 +12,12 @@ const cars: Car[] = [
   { id: 4, name: 'Haval Jolion', type: 'SUV', plate: 'P605YT', range: 364, price: 12.5, walk: 8, color: '#7ee8ff', image: 'https://news-site-za.s3.af-south-1.amazonaws.com/images/2021/05/jolion-003.jpg', x: 38, y: 76 },
 ];
 const filters = ['All cars', 'Electric', 'Comfort', 'SUV'];
+const tabs = [
+  { id: 'explore', label: 'Explore', icon: IconCar },
+  { id: 'trips', label: 'Trips', icon: IconRoute },
+  { id: 'saved', label: 'Saved', icon: IconHeart },
+  { id: 'account', label: 'Account', icon: IconUser },
+] as const;
 
 export default function Home() {
   const [signedIn, setSignedIn] = useState(false);
@@ -17,9 +25,11 @@ export default function Home() {
   const [filter, setFilter] = useState('All cars');
   const [selectedId, setSelectedId] = useState(1);
   const [reserved, setReserved] = useState(false);
-  const [listOpen, setListOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'explore' | 'trips' | 'saved' | 'account'>('explore');
+  const [tabDirection, setTabDirection] = useState(0);
+  const [detailCarId, setDetailCarId] = useState<number | null>(null);
   const visibleCars = useMemo(() => cars.filter((car) => filter === 'All cars' || car.type === filter), [filter]);
-  const selected = cars.find((car) => car.id === selectedId) ?? cars[0];
+  const detailCar = cars.find((car) => car.id === detailCarId) ?? null;
 
   useEffect(() => {
     setSignedIn(localStorage.getItem('carshare-dev-session') === 'active');
@@ -40,6 +50,13 @@ export default function Home() {
     const first = cars.find((car) => next === 'All cars' || car.type === next);
     if (first) setSelectedId(first.id);
     setReserved(false);
+  }
+  function switchTab(next: typeof activeTab) {
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    const nextIndex = tabs.findIndex((tab) => tab.id === next);
+    setTabDirection(nextIndex - currentIndex);
+    setDetailCarId(null);
+    setActiveTab(next);
   }
 
   if (!signedIn) {
@@ -66,41 +83,87 @@ export default function Home() {
 
   return (
     <main className="app-shell">
-      <section className="map" aria-label="Map of nearby cars">
-        <iframe className="grozny-map" title="OpenStreetMap of Grozny, Chechen Republic" src="https://www.openstreetmap.org/export/embed.html?bbox=45.6500%2C43.2850%2C45.7400%2C43.3500&amp;layer=mapnik&amp;marker=43.3178%2C45.6949" />
-        <div className="map-shade" />
-        <header className="topbar">
+      <AnimatePresence mode="popLayout" initial={false} custom={tabDirection}>
+      <motion.div className="tab-stage" key={activeTab} custom={tabDirection} initial={{ x: tabDirection > 0 ? 28 : -28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: tabDirection > 0 ? -28 : 28, opacity: 0 }} transition={{ duration: .28, ease: [.32, .72, 0, 1] }}>
+      {activeTab === 'explore' ? <section className="fleet-page" aria-labelledby="fleet-title">
+        <header className="fleet-header">
           <div className="brand"><span className="brand-mark">C</span><span>car<span>share</span></span></div>
           <button className="profile" aria-label="Sign out of development app" title="Sign out" onClick={signOut}>N</button>
         </header>
-        <div className="search-wrap">
-          <label className="search"><span aria-hidden="true">⌕</span><input aria-label="Search destination" placeholder="Where are you going?" /></label>
-          <button className="locate" aria-label="Find my location">◎</button>
-        </div>
-        <div className="filters" aria-label="Vehicle filters">
+        <div className="fleet-heading"><div><span className="page-kicker">Grozny · nearby</span><h1 id="fleet-title">Choose your car</h1></div><span className="live-count"><i />{visibleCars.length} available</span></div>
+        <label className="fleet-search"><span aria-hidden="true">⌕</span><input aria-label="Search available cars" placeholder="Search model or class" /></label>
+        <div className="filters fleet-filters" aria-label="Vehicle filters">
           {filters.map((item) => <button key={item} className={filter === item ? 'filter active' : 'filter'} onClick={() => selectFilter(item)}>{item === 'Electric' && <span aria-hidden="true">⚡</span>}{item}</button>)}
         </div>
-        {visibleCars.map((car) => (
-          <button key={car.id} className={car.id === selectedId ? 'car-pin selected' : 'car-pin'} style={{ left: `${car.x}%`, top: `${car.y}%`, '--pin-color': car.color } as React.CSSProperties} onClick={() => { setSelectedId(car.id); setReserved(false); }} aria-label={`${car.name}, ${car.walk} minute walk`}>
-            <span className="pin-icon">⌁</span><strong>₽{car.price}</strong>
-          </button>
-        ))}
-        <button className="map-control" aria-label="Center map">⌖</button>
-      </section>
+        <div className="fleet-list">
+          {visibleCars.map((car) => {
+            const isReserved = reserved && selectedId === car.id;
+            return <article className="fleet-card fleet-card-clickable" key={car.id} role="button" tabIndex={0} onClick={() => setDetailCarId(car.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setDetailCarId(car.id); }} aria-label={`Open details for ${car.name}`}>
+              <div className="fleet-image"><img src={car.image} alt={car.name} /><span><IconMapPin size={13} />{car.walk} min walk</span><button aria-label={`Save ${car.name}`} onClick={(event) => event.stopPropagation()}><IconHeart size={19} stroke={1.8} /></button></div>
+              <div className="fleet-card-body">
+                <div className="fleet-title-row"><div><span>{car.type === 'Electric' ? '⚡ ' : ''}{car.type}</span><h2>{car.name}</h2><small>{car.plate}</small></div><strong>₽{car.price}<small>/min</small></strong></div>
+                <div className="fleet-specs"><span><small>Range</small><b>{car.range} km</b></span><span><small>{car.type === 'Electric' ? 'Charge' : 'Fuel'}</small><b>{car.type === 'Electric' ? '82%' : '74%'}</b></span><span><small>Seats</small><b>5</b></span></div>
+                <div className="fleet-card-hint"><span>{isReserved ? 'Reserved · 15:00' : 'View full details'}</span><IconChevronRight size={18} stroke={1.8} /></div>
+              </div>
+            </article>;
+          })}
+        </div>
+        <AnimatePresence>
+          {detailCar && <motion.section className="car-detail" aria-labelledby="car-detail-title" initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ duration: .34, ease: [.32, .72, 0, 1] }}>
+            <div className="detail-hero">
+              <img src={detailCar.image} alt={detailCar.name} />
+              <div className="detail-scrim" />
+              <button className="detail-glass-button detail-back" onClick={() => setDetailCarId(null)} aria-label="Back to available cars"><IconArrowLeft size={23} stroke={2} /></button>
+              <button className="detail-glass-button detail-save" aria-label={`Save ${detailCar.name}`}><IconHeart size={22} stroke={1.8} /></button>
+              <div className="detail-hero-copy"><span>{detailCar.type === 'Electric' ? '⚡ ' : ''}{detailCar.type}</span><h1 id="car-detail-title">{detailCar.name}</h1><p><IconMapPin size={14} /> {detailCar.walk} min walk · Central Grozny</p></div>
+            </div>
+            <div className="detail-content">
+              <div className="detail-price"><div><span>From</span><strong>₽{detailCar.price}<small>/min</small></strong></div><span className="detail-available"><i />Available now</span></div>
+              <div className="detail-metrics">
+                <div><IconGauge size={21} /><span>Range<strong>{detailCar.range} km</strong></span></div>
+                <div><IconBattery size={21} /><span>{detailCar.type === 'Electric' ? 'Charge' : 'Fuel'}<strong>{detailCar.type === 'Electric' ? '82%' : '74%'}</strong></span></div>
+                <div><IconUsers size={21} /><span>Seats<strong>5 people</strong></span></div>
+              </div>
+              <section className="detail-section"><h2>About this car</h2><p>A clean, comfortable city car with automatic transmission, climate control, phone connectivity, and everything you need for an easy drive around Grozny.</p></section>
+              <section className="detail-section"><h2>Included</h2><div className="feature-list"><span><IconShieldCheck size={19} />Comprehensive insurance</span><span><IconCar size={19} />Fuel and city parking</span><span><IconRoute size={19} />24/7 roadside support</span></div></section>
+              <section className="detail-section detail-location"><h2>Pickup</h2><div><IconMapPin size={20} /><span><strong>Central Grozny</strong><small>{detailCar.walk} minute walk · exact location after reservation</small></span></div></section>
+            </div>
+            <div className="detail-action"><button className={reserved && selectedId === detailCar.id ? 'detail-reserve reserved' : 'detail-reserve'} onClick={() => { const isCurrent = reserved && selectedId === detailCar.id; setSelectedId(detailCar.id); setReserved(!isCurrent); }}><span>{reserved && selectedId === detailCar.id ? 'Reserved until 15:00' : 'Reserve this car'}</span><b>{reserved && selectedId === detailCar.id ? '✓' : `₽${detailCar.price}/min`}</b></button></div>
+          </motion.section>}
+        </AnimatePresence>
+      </section> : (
+        <section className="tab-page" aria-labelledby={`${activeTab}-title`}>
+          <header className="page-header"><div><span className="page-kicker">CarShare</span><h1 id={`${activeTab}-title`}>{activeTab === 'trips' ? 'Your trips' : activeTab === 'saved' ? 'Saved cars' : 'Your account'}</h1></div><button className="profile" aria-label="Sign out of development app" title="Sign out" onClick={signOut}>N</button></header>
 
-      <section className={listOpen ? 'sheet open' : 'sheet'} aria-label="Selected vehicle">
-        <button className="sheet-handle" onClick={() => setListOpen(!listOpen)} aria-label={listOpen ? 'Collapse vehicle list' : 'Expand vehicle list'}><span /></button>
-        <div className="availability"><span className="pulse" /> {visibleCars.length} cars nearby <span>— ready when you are ✨</span></div>
-        <div className="car-card">
-          <div className="car-copy"><div className="eyebrow"><span className="electric-dot">⚡</span>{selected.type}</div><h1>{selected.name}</h1><p>{selected.plate} · {selected.walk} min walk</p></div>
-          <div className="car-photo"><img src={selected.image} alt={selected.name} /></div>
-        </div>
-        <div className="stats">
-          <div><span>Range</span><strong>{selected.range} km</strong></div><div><span>Rate</span><strong>₽{selected.price}<small>/min</small></strong></div><div><span>Fuel</span><strong>{selected.type === 'Electric' ? '82%' : '74%'}</strong></div>
-        </div>
-        <button className={reserved ? 'reserve reserved' : 'reserve'} onClick={() => setReserved(!reserved)}><span>{reserved ? 'Car reserved — 15:00' : 'Reserve this car'}</span><span className="arrow">→</span></button>
-        <nav className="bottom-nav" aria-label="Main navigation"><button className="nav-active"><span>⌖</span>Explore</button><button><span>▤</span>Trips</button><button><span>♡</span>Saved</button><button><span>○</span>Account</button></nav>
-      </section>
+          {activeTab === 'trips' && <div className="page-content">
+            <section className="summary-card"><span>August activity</span><strong>3 trips</strong><p>42 minutes · ₽386 total</p></section>
+            <h2>Recent</h2>
+            <article className="trip-card"><div className="trip-icon">✓</div><div><strong>Volkswagen ID.3</strong><span>Today, 14:22 · 18 min</span><small>Grozny Mall → Minutka Square</small></div><b>₽187</b></article>
+            <article className="trip-card"><div className="trip-icon">✓</div><div><strong>Mini Cooper SE</strong><span>22 Aug, 19:08 · 11 min</span><small>Putin Avenue → Flower Park</small></div><b>₽98</b></article>
+          </div>}
+
+          {activeTab === 'saved' && <div className="page-content">
+            <p className="page-lead">Your favorite cars around Grozny, ready to find again.</p>
+            {cars.slice(0,2).map((car) => <article className="saved-card" key={car.id}><img src={car.image} alt={car.name} /><div><span>{car.type}</span><strong>{car.name}</strong><small>{car.range} km range · ₽{car.price}/min</small><button onClick={() => { setSelectedId(car.id); switchTab('explore'); }}>View car <b>→</b></button></div></article>)}
+          </div>}
+
+          {activeTab === 'account' && <div className="page-content">
+            <section className="account-card"><div className="account-avatar">N</div><div><strong>NVR Developer</strong><span>developer@carshare.local</span><small>Development account</small></div></section>
+            <h2>Preferences</h2>
+            <div className="settings-list"><button><span>◉</span><div><strong>Payment method</strong><small>Mock card ·· 4242</small></div><b>›</b></button><button><span>♢</span><div><strong>Driving documents</strong><small>Verified for development</small></div><b>›</b></button><button><span>☾</span><div><strong>Appearance</strong><small>iOS dark</small></div><b>›</b></button></div>
+            <button className="signout-button" onClick={signOut}>Sign out of development app</button>
+          </div>}
+        </section>
+      )}
+      </motion.div>
+      </AnimatePresence>
+
+      {!detailCar && <nav className="bottom-nav" aria-label="Main navigation">
+        {tabs.map((tab) => { const Icon = tab.icon; const isActive = activeTab === tab.id; return <motion.button key={tab.id} className={isActive ? 'nav-active' : ''} onClick={() => switchTab(tab.id)} aria-current={isActive ? 'page' : undefined} whileTap={{ scale: .9 }} transition={{ type: 'spring', stiffness: 520, damping: 28 }}>
+          {isActive && <motion.span className="nav-active-pill" layoutId="nav-active-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+          <motion.span className="nav-icon" animate={{ scale: isActive ? 1.14 : 1, y: isActive ? -1 : 0 }} transition={{ type: 'spring', stiffness: 480, damping: 24 }}><Icon size={23} stroke={1.75} /></motion.span><small>{tab.label}</small>
+        </motion.button>; })}
+      </nav>}
     </main>
   );
 }
