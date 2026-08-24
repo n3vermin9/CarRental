@@ -2,12 +2,12 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-type Car = { id: number; name: string; type: string; plate: string; range: number; price: number; walk: number; color: string; x: number; y: number };
+type Car = { id: number; name: string; type: string; plate: string; range: number; price: number; walk: number; color: string; image: string; x: number; y: number };
 const cars: Car[] = [
-  { id: 1, name: 'Mini Cooper SE', type: 'Electric', plate: 'M482OP', range: 186, price: 8.9, walk: 2, color: '#d8ff52', x: 65, y: 24 },
-  { id: 2, name: 'Volkswagen ID.3', type: 'Electric', plate: 'K913TA', range: 247, price: 10.4, walk: 4, color: '#b9a7ff', x: 26, y: 46 },
-  { id: 3, name: 'Kia Rio', type: 'Comfort', plate: 'A227KC', range: 412, price: 7.2, walk: 6, color: '#ff9c7d', x: 72, y: 66 },
-  { id: 4, name: 'Haval Jolion', type: 'SUV', plate: 'P605YT', range: 364, price: 12.5, walk: 8, color: '#7ee8ff', x: 38, y: 79 },
+  { id: 1, name: 'Mini Cooper SE', type: 'Electric', plate: 'M482OP', range: 186, price: 8.9, walk: 2, color: '#d8ff52', image: 'https://img-cdn.evfy.in/products/P90357227_highRes_the-new-mini-cooper-.jpg', x: 65, y: 38 },
+  { id: 2, name: 'Volkswagen ID.3', type: 'Electric', plate: 'K913TA', range: 247, price: 10.4, walk: 4, color: '#b9a7ff', image: 'https://vw.media-corner.ch/sites/default/files/styles/full_image/public/media/images/2021-05/VW_ID3_Erfolg.jpg', x: 26, y: 51 },
+  { id: 3, name: 'Kia Rio', type: 'Comfort', plate: 'A227KC', range: 412, price: 7.2, walk: 6, color: '#ff9c7d', image: 'https://kiaonesaw.com/colores/rio/rio_white.jpg', x: 72, y: 67 },
+  { id: 4, name: 'Haval Jolion', type: 'SUV', plate: 'P605YT', range: 364, price: 12.5, walk: 8, color: '#7ee8ff', image: 'https://news-site-za.s3.af-south-1.amazonaws.com/images/2021/05/jolion-003.jpg', x: 38, y: 76 },
 ];
 const filters = ['All cars', 'Electric', 'Comfort', 'SUV'];
 
@@ -67,9 +67,8 @@ export default function Home() {
   return (
     <main className="app-shell">
       <section className="map" aria-label="Map of nearby cars">
-        <div className="orb orb-one" /><div className="orb orb-two" /><div className="dot-grid" />
-        <div className="road road-a" /><div className="road road-b" /><div className="road road-c" />
-        <div className="block block-a" /><div className="block block-b" /><div className="block block-c" />
+        <iframe className="grozny-map" title="OpenStreetMap of Grozny, Chechen Republic" src="https://www.openstreetmap.org/export/embed.html?bbox=45.6500%2C43.2850%2C45.7400%2C43.3500&amp;layer=mapnik&amp;marker=43.3178%2C45.6949" />
+        <div className="map-shade" />
         <header className="topbar">
           <div className="brand"><span className="brand-mark">C</span><span>car<span>share</span></span></div>
           <button className="profile" aria-label="Sign out of development app" title="Sign out" onClick={signOut}>N</button>
@@ -94,7 +93,7 @@ export default function Home() {
         <div className="availability"><span className="pulse" /> {visibleCars.length} cars nearby <span>— ready when you are ✨</span></div>
         <div className="car-card">
           <div className="car-copy"><div className="eyebrow"><span className="electric-dot">⚡</span>{selected.type}</div><h1>{selected.name}</h1><p>{selected.plate} · {selected.walk} min walk</p></div>
-          <div className="car-visual" style={{ '--car-color': selected.color } as React.CSSProperties}><div className="car-window" /><div className="car-body" /><span className="wheel one" /><span className="wheel two" /></div>
+          <div className="car-photo"><img src={selected.image} alt={selected.name} /></div>
         </div>
         <div className="stats">
           <div><span>Range</span><strong>{selected.range} km</strong></div><div><span>Rate</span><strong>₽{selected.price}<small>/min</small></strong></div><div><span>Fuel</span><strong>{selected.type === 'Electric' ? '82%' : '74%'}</strong></div>
