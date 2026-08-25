@@ -7,6 +7,7 @@ import './ios-refine.css';
 import './fleet.css';
 import './valoar-adapt.css';
 import './car-detail.css';
+import './apple-theme.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -21,6 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'CarShare — your next car is nearby',
   description: 'Find, reserve, and drive nearby cars by the minute.',
+  icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
 };
 
 export default function RootLayout({
