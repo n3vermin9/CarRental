@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import './login.css';
@@ -23,6 +23,14 @@ export const metadata: Metadata = {
   title: 'CarShare — your next car is nearby',
   description: 'Find, reserve, and drive nearby cars by the minute.',
   icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

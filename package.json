@@ -9,7 +9,8 @@
     "dev": "next dev --webpack -H 127.0.0.1 -p 3000",
     "build": "vinext build",
     "start": "vinext start",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "phone:run": "./scripts/run-phone-simulator.sh"
   },
   "dependencies": {
     "@tabler/icons-react": "3.44.0",
