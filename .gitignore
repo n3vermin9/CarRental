@@ -37,3 +37,4 @@ next-env.d.ts
 /outputs/
 /work/
 /ios/CarShare/DerivedData/
+/ios/CarShare/DeviceDerivedData/

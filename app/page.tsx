@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   IconAdjustmentsHorizontal, IconArrowLeft, IconBattery, IconBell, IconBolt, IconCar,
@@ -186,6 +186,8 @@ export default function Home() {
   const [licence, setLicence] = useState<LicenceData>(defaultLicence);
   const [toast, setToast] = useState<string | null>(null);
   const [secondaryOverlayOpen, setSecondaryOverlayOpen] = useState(false);
+  const [reservationDetailsRequested, setReservationDetailsRequested] = useState(false);
+  const [exploreScrolled, setExploreScrolled] = useState(false);
   const [savedIds, setSavedIds] = useState<number[]>([1, 2]);
   const copy = getCopy(locale);
 
@@ -256,8 +258,14 @@ export default function Home() {
   const activeFilterCount = [fleetFilters.maxPrice, fleetFilters.brand !== 'All', fleetFilters.carClass !== 'All'].filter(Boolean).length;
   const navCovered = Boolean(detailCar || checkoutCar || showFilterSheet || showNotifications || secondaryOverlayOpen);
 
-  function signIn(event: FormEvent<HTMLFormElement>) { event.preventDefault(); localStorage.setItem('carshare-dev-session', 'active'); setSignedIn(true); }
-  function signOut() { localStorage.removeItem('carshare-dev-session'); setSignedIn(false); }
+  function signIn() {
+    setSignedIn(true);
+    try { localStorage.setItem('carshare-dev-session', 'active'); } catch { /* Session storage is optional in restricted web views. */ }
+  }
+  function signOut() {
+    setSignedIn(false);
+    try { localStorage.removeItem('carshare-dev-session'); } catch { /* Session storage is optional in restricted web views. */ }
+  }
   function changeLocale(next: Locale) { localStorage.setItem('carshare-language', next); setLocale(next); }
   function changeTheme(next: Theme) { localStorage.setItem('carshare-theme', next); setTheme(next); }
   function showMessage(message: string) {
@@ -313,6 +321,11 @@ export default function Home() {
     setTabDirection(tabs.findIndex((tab) => tab.id === next) - tabs.findIndex((tab) => tab.id === activeTab));
     setCheckoutCarId(null); setDetailCarId(null); setSecondaryOverlayOpen(false); setActiveTab(next);
   }
+  function openReservationDetails() {
+    setReservationDetailsRequested(true);
+    switchTab('trips');
+    setSecondaryOverlayOpen(true);
+  }
   function openSavedCar(id: number) { setDetailCarId(id); }
   function toggleSaved(id: number) { setSavedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); }
   function changeFilter(next: string, target?: HTMLButtonElement) {
@@ -350,13 +363,13 @@ export default function Home() {
 
   if (!signedIn) return (
     <main className="apple-login">
-      <motion.section className="apple-login-card" initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={spring} aria-labelledby="login-title">
+      <motion.section className="apple-login-card" initial={false} animate={{ opacity: 1, y: 0, scale: 1 }} transition={spring} aria-labelledby="login-title">
         <div className="login-symbol"><img draggable={false} src="/valoar-logo.svg" alt="" /></div>
         <div className="login-copy"><h1 id="login-title">{copy.welcome}</h1><p>{copy.welcomeDescription}</p></div>
-        <form onSubmit={signIn}>
-          <label htmlFor="dev-email">{copy.email}</label><input id="dev-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
-          <label htmlFor="dev-password">{copy.password}</label><input id="dev-password" type="password" defaultValue="carshare" required autoComplete="current-password" />
-          <motion.button type="submit" whileTap={{ scale: .98 }} transition={spring}>{copy.continue} <IconChevronRight size={20} /></motion.button>
+        <form autoComplete="off" onSubmit={(event) => { event.preventDefault(); signIn(); }}>
+          <label htmlFor="dev-email">{copy.email}</label><input id="dev-email" type="text" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+          <label htmlFor="dev-access-code">{copy.password}</label><input id="dev-access-code" className="masked-login-input" type="text" defaultValue="carshare" required autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+          <motion.button type="button" onClick={signIn} whileTap={{ scale: .98 }} transition={spring}>{copy.continue} <IconChevronRight size={20} /></motion.button>
         </form>
         <p className="privacy-note"><IconShieldCheck size={16} /> {copy.privacy}</p>
       </motion.section>
@@ -367,13 +380,18 @@ export default function Home() {
     <main className="app-shell apple-app">
       <AnimatePresence mode="popLayout" initial={false} custom={tabDirection}>
         <motion.div className="tab-stage" key={activeTab} custom={tabDirection}
-          initial={reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? 22 : -22, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+          initial={tabDirection === 0 ? false : reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? 22 : -22, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
           exit={reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? -22 : 22, opacity: 0 }} transition={spring}>
           {activeTab === 'explore' ? (
-            <section className="explore-page" aria-labelledby="fleet-title">
+            <section className="explore-page" aria-labelledby="fleet-title" onScroll={(event) => {
+              const scrollArea = event.currentTarget;
+              const searchRow = scrollArea.querySelector<HTMLElement>('.search-row');
+              if (!searchRow) return;
+              setExploreScrolled(searchRow.getBoundingClientRect().top <= scrollArea.getBoundingClientRect().top + 1);
+            }}>
               <header className="apple-header"><div className="apple-brand"><span><img draggable={false} src="/valoar-logo.svg" alt="" /></span>CarShare</div><motion.button className="explore-notifications" whileTap={{ scale: .9 }} transition={spring} onClick={() => setShowNotifications(true)} aria-label={`${featureText[locale].notifications}${notices.filter((notice) => !notice.read).length ? ` · ${notices.filter((notice) => !notice.read).length}` : ''}`} aria-haspopup="dialog"><IconBell size={20} />{notices.some((notice) => !notice.read) && <span>{notices.filter((notice) => !notice.read).length}</span>}</motion.button></header>
               <div className="title-block"><button className="location-label"><IconNavigation size={13} fill="currentColor" /> {copy.grozny} <IconChevronRight size={14} /></button><h1 id="fleet-title">{copy.availableNearby}</h1><p>{visibleCars.length} {copy.readyToDrive}</p></div>
-              <div className="search-row"><div className="apple-search"><IconSearch size={19} /><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={copy.searchAvailableCars} placeholder={copy.searchCars} /><AnimatePresence>{query && <motion.button type="button" className="search-clear" aria-label={copy.clearSearch} onClick={(event) => { event.preventDefault(); setQuery(''); searchInputRef.current?.blur(); event.currentTarget.blur(); }} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} transition={spring} whileTap={{ scale: .86 }}><IconX size={14} strokeWidth={2.4} /></motion.button>}</AnimatePresence></div><button className={`filter-button ${activeFilterCount ? 'active' : ''}`} aria-label={copy.adjustFilters} onClick={() => setShowFilterSheet(true)}><IconAdjustmentsHorizontal size={21} />{activeFilterCount > 0 && <span>{activeFilterCount}</span>}</button></div>
+              <div className={`search-row ${exploreScrolled ? 'scrolled' : ''}`}><div className="apple-search"><IconSearch size={19} /><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={copy.searchAvailableCars} placeholder={copy.searchCars} /><AnimatePresence>{query && <motion.button type="button" className="search-clear" aria-label={copy.clearSearch} onClick={(event) => { event.preventDefault(); setQuery(''); searchInputRef.current?.blur(); event.currentTarget.blur(); }} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} transition={spring} whileTap={{ scale: .86 }}><IconX size={14} strokeWidth={2.4} /></motion.button>}</AnimatePresence></div><button className={`filter-button ${activeFilterCount ? 'active' : ''}`} aria-label={copy.adjustFilters} onClick={() => setShowFilterSheet(true)}><IconAdjustmentsHorizontal size={21} />{activeFilterCount > 0 && <span>{activeFilterCount}</span>}</button></div>
               <div className="apple-filters" aria-label={copy.taxiFilters}>{filters.map((item) => <motion.button key={item} onClick={(event) => changeFilter(item, event.currentTarget)} className={filter === item ? 'active' : ''} whileTap={{ scale: .96 }} transition={spring}>{item === 'All' ? copy.allCars : carTypeLabel(locale, item)}</motion.button>)}</div>
               <div className="section-heading"><h2>{copy.closestCars}</h2></div>
               <div className="vehicle-list">
@@ -390,13 +408,13 @@ export default function Home() {
                 </AnimatePresence>
               </div>
             </section>
-          ) : <SecondaryPage activeTab={activeTab} savedIds={savedIds} signOut={signOut} openSavedCar={openSavedCar} toggleSaved={toggleSaved} reservation={reservation} reservationCar={cars.find((car) => car.id === reservation?.carId) ?? null} modifyReservation={(id) => setCheckoutCarId(id)} cancelReservation={cancelReservation} advanceReservation={advanceReservation} extendReservation={extendReservation} onOverlayVisibilityChange={setSecondaryOverlayOpen} locale={locale} changeLocale={changeLocale} theme={theme} changeTheme={changeTheme} notices={notices} markNoticesRead={markNoticesRead} profile={profile} payment={payment} licence={licence} saveProfile={saveProfile} savePayment={savePayment} saveLicence={saveLicence} />}
+          ) : <SecondaryPage activeTab={activeTab} savedIds={savedIds} signOut={signOut} openSavedCar={openSavedCar} toggleSaved={toggleSaved} reservation={reservation} reservationCar={cars.find((car) => car.id === reservation?.carId) ?? null} reservationDetailsRequested={reservationDetailsRequested} clearReservationDetailsRequest={() => setReservationDetailsRequested(false)} modifyReservation={(id) => setCheckoutCarId(id)} cancelReservation={cancelReservation} advanceReservation={advanceReservation} extendReservation={extendReservation} onOverlayVisibilityChange={setSecondaryOverlayOpen} locale={locale} changeLocale={changeLocale} theme={theme} changeTheme={changeTheme} notices={notices} markNoticesRead={markNoticesRead} profile={profile} payment={payment} licence={licence} saveProfile={saveProfile} savePayment={savePayment} saveLicence={saveLicence} />}
         </motion.div>
       </AnimatePresence>
       <AnimatePresence>{detailCar && <motion.section className="car-detail apple-detail" aria-labelledby="car-detail-title" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring}>
         <div className="detail-hero"><img draggable={false} src={detailCar.image} alt={detailCar.name} /><div className="detail-scrim" /><motion.button className="detail-glass-button detail-back" whileTap={{ scale: .9 }} onClick={() => setDetailCarId(null)} aria-label={copy.backPrevious}><IconArrowLeft size={23} /></motion.button><motion.button className={`detail-glass-button detail-save ${savedIds.includes(detailCar.id) ? 'saved' : ''}`} whileTap={{ scale: .9 }} onClick={() => toggleSaved(detailCar.id)} aria-label={`${copy.save} ${detailCar.name}`}><IconHeart size={21} fill={savedIds.includes(detailCar.id) ? 'currentColor' : 'none'} /></motion.button><div className="detail-hero-copy"><span>{detailCar.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, detailCar.type)}</span><h1 id="car-detail-title">{detailCar.name}</h1><p><IconMapPin size={14} /> {minuteCount(locale, detailCar.walk, true)} · {copy.centralGrozny}</p></div></div>
         <div className="detail-content"><div className="detail-price"><div><span>{copy.dailyRental}</span><strong>₽{detailCar.price.toLocaleString('ru-RU')}<small>/{locale === 'ru' ? 'сутки' : 'day'}</small></strong></div><span className="detail-available"><i />{copy.availableNow}</span></div><div className="detail-metrics"><div><IconGauge size={21} /><span>{copy.range}<strong>{detailCar.range} {locale === 'ru' ? 'км' : 'km'}</strong></span></div><div><IconBattery size={21} /><span>{detailCar.electric ? copy.charge : copy.fuel}<strong>{detailCar.electric ? '82%' : '74%'}</strong></span></div><div><IconUsers size={21} /><span>{copy.seats}<strong>{carSeats(detailCar.name)} {copy.people}</strong></span></div></div><section className="detail-section"><h2>{copy.readyCity}</h2><p>{copy.readyCityDescription}</p></section><section className="detail-section"><h2>{copy.included}</h2><div className="feature-list"><span><IconShieldCheck size={19} />{copy.comprehensiveInsurance}</span><span><IconCar size={19} />{copy.fuelParking}</span><span><IconRoute size={19} />{copy.roadsideSupport}</span></div></section><section className="detail-section detail-location"><h2>{copy.pickup}</h2><div><IconMapPin size={20} /><span><strong>{copy.centralGrozny}</strong><small>{detailCar.walk} {copy.exactAfterReservation}</small></span></div></section></div>
-        <div className="detail-action"><motion.button className={`detail-reserve ${reservation?.carId === detailCar.id ? 'reserved' : ''}`} whileTap={reservation?.carId === detailCar.id ? undefined : { scale: .98 }} transition={spring} onClick={() => setCheckoutCarId(detailCar.id)} disabled={reservation?.carId === detailCar.id} aria-haspopup="dialog"><span>{reservation?.carId === detailCar.id ? statusLabel(locale, reservation.status) : copy.reserveCar}</span><b>{reservation?.carId === detailCar.id ? <IconCheck size={18} /> : `₽${detailCar.price.toLocaleString('ru-RU')}/${locale === 'ru' ? 'сутки' : 'day'}`}</b></motion.button></div>
+        <div className="detail-action"><motion.button className={`detail-reserve ${reservation?.carId === detailCar.id ? 'reserved' : ''}`} whileTap={{ scale: .98 }} transition={spring} onClick={() => reservation?.carId === detailCar.id ? openReservationDetails() : setCheckoutCarId(detailCar.id)} aria-haspopup="dialog"><span>{reservation?.carId === detailCar.id ? copy.viewReservationDetails : copy.reserveCar}</span><b>{reservation?.carId === detailCar.id ? <IconChevronRight size={18} /> : `₽${detailCar.price.toLocaleString('ru-RU')}/${locale === 'ru' ? 'сутки' : 'day'}`}</b></motion.button></div>
       </motion.section>}</AnimatePresence>
       <nav className={`apple-tabbar ${navCovered ? 'covered' : ''}`} aria-label={copy.mainNavigation} aria-hidden={navCovered}>{tabs.map((tab) => { const Icon = tab.icon; const isActive = activeTab === tab.id; return <motion.button key={tab.id} onClick={() => switchTab(tab.id)} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined} tabIndex={navCovered ? -1 : 0} whileTap={{ scale: .92 }} transition={spring}>{isActive && <motion.span className="tab-selection" layoutId="tab-selection" transition={spring} />}<span className="tab-icon"><Icon size={22} stroke={isActive ? 2 : 1.7} fill={isActive && tab.id === 'saved' ? 'currentColor' : 'none'} /></span><small>{copy[tab.id]}</small></motion.button>; })}</nav>
       <AnimatePresence>
@@ -477,7 +495,7 @@ function ReservationCheckout({ car, existingReservation, payment, reduceMotion, 
   </motion.div>;
 }
 
-function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved, reservation, reservationCar, modifyReservation, cancelReservation, advanceReservation, extendReservation, onOverlayVisibilityChange, locale, changeLocale, theme, changeTheme, notices, markNoticesRead, profile, payment, licence, saveProfile, savePayment, saveLicence }: { activeTab: Exclude<TabId, 'explore'>; savedIds: number[]; signOut: () => void; openSavedCar: (id: number) => void; toggleSaved: (id: number) => void; reservation: Reservation | null; reservationCar: Car | null; modifyReservation: (id: number) => void; cancelReservation: () => void; advanceReservation: () => void; extendReservation: () => void; onOverlayVisibilityChange: (open: boolean) => void; locale: Locale; changeLocale: (locale: Locale) => void; theme: Theme; changeTheme: (theme: Theme) => void; notices: AppNotice[]; markNoticesRead: () => void; profile: ProfileData; payment: PaymentData; licence: LicenceData; saveProfile: (profile: ProfileData) => void; savePayment: (payment: PaymentData) => void; saveLicence: (licence: LicenceData) => void }) {
+function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved, reservation, reservationCar, reservationDetailsRequested, clearReservationDetailsRequest, modifyReservation, cancelReservation, advanceReservation, extendReservation, onOverlayVisibilityChange, locale, changeLocale, theme, changeTheme, notices, markNoticesRead, profile, payment, licence, saveProfile, savePayment, saveLicence }: { activeTab: Exclude<TabId, 'explore'>; savedIds: number[]; signOut: () => void; openSavedCar: (id: number) => void; toggleSaved: (id: number) => void; reservation: Reservation | null; reservationCar: Car | null; reservationDetailsRequested: boolean; clearReservationDetailsRequest: () => void; modifyReservation: (id: number) => void; cancelReservation: () => void; advanceReservation: () => void; extendReservation: () => void; onOverlayVisibilityChange: (open: boolean) => void; locale: Locale; changeLocale: (locale: Locale) => void; theme: Theme; changeTheme: (theme: Theme) => void; notices: AppNotice[]; markNoticesRead: () => void; profile: ProfileData; payment: PaymentData; licence: LicenceData; saveProfile: (profile: ProfileData) => void; savePayment: (payment: PaymentData) => void; saveLicence: (licence: LicenceData) => void }) {
   const reduceMotion = useReducedMotion();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showFinances, setShowFinances] = useState(false);
@@ -503,7 +521,7 @@ function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved
     {activeTab === 'account' && <div className="secondary-content"><motion.button className="profile-card profile-card-button" whileTap={{ scale: .985 }} onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('profile'); }}><div className="large-avatar">{profile.name.trim().charAt(0).toUpperCase() || 'N'}</div><div><strong>{profile.name}</strong><span>{profile.email}</span></div><IconChevronRight size={19} /></motion.button><div className="section-heading"><h2>{copy.preferences}</h2></div><div className="grouped-list settings-list"><button onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('payment'); }}><span className="row-icon blue"><IconCreditCard size={18} /></span><div><strong>{copy.paymentMethod}</strong><small>{payment.label} ·· {payment.last4}</small></div><IconChevronRight size={18} /></button><button onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('licence'); }}><span className="row-icon purple"><IconId size={18} /></span><div><strong>{copy.drivingDocuments}</strong><small>{licence.verified ? copy.verified : licence.expiry}</small></div><IconChevronRight size={18} /></button><div className="language-setting appearance-setting"><span className="row-icon indigo">{theme === 'dark' ? <IconMoon size={18} /> : <IconSun size={18} />}</span><div><strong>{copy.appearance}</strong><small>{theme === 'dark' ? copy.dark : copy.light}</small></div><div className="language-switch appearance-switch" role="group" aria-label={copy.appearance}><button type="button" className={theme === 'dark' ? 'active' : ''} aria-label={copy.dark} aria-pressed={theme === 'dark'} onClick={() => changeTheme('dark')}><IconMoon size={16} /></button><button type="button" className={theme === 'light' ? 'active' : ''} aria-label={copy.light} aria-pressed={theme === 'light'} onClick={() => changeTheme('light')}><IconSun size={16} /></button></div></div><div className="language-setting"><span className="row-icon language"><IconLanguage size={18} /></span><div><strong>{copy.language}</strong><small>{locale === 'en' ? copy.english : copy.russian}</small></div><div className="language-switch language-code-switch" role="group" aria-label={copy.language}><button type="button" className={locale === 'en' ? 'active' : ''} aria-label={copy.english} aria-pressed={locale === 'en'} onClick={() => changeLocale('en')}><span aria-hidden="true">EN</span></button><button type="button" className={locale === 'ru' ? 'active' : ''} aria-label={copy.russian} aria-pressed={locale === 'ru'} onClick={() => changeLocale('ru')}><span aria-hidden="true">RU</span></button></div></div></div><button className="apple-signout" onClick={signOut}><IconLogout size={18} /> {copy.signOut}</button></div>}
 
     <AnimatePresence>
-      {showReservation && reservation && reservationCar && <ReservationDetail reservation={reservation} car={reservationCar} payment={payment} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowReservation(false); }} onModify={() => { onOverlayVisibilityChange(false); setShowReservation(false); modifyReservation(reservationCar.id); }} onCancel={() => { onOverlayVisibilityChange(false); cancelReservation(); setShowReservation(false); }} onAdvance={advanceReservation} onExtend={extendReservation} locale={locale} />}
+      {(showReservation || reservationDetailsRequested) && reservation && reservationCar && <ReservationDetail reservation={reservation} car={reservationCar} payment={payment} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowReservation(false); clearReservationDetailsRequest(); }} onModify={() => { onOverlayVisibilityChange(false); setShowReservation(false); clearReservationDetailsRequest(); modifyReservation(reservationCar.id); }} onCancel={() => { onOverlayVisibilityChange(false); cancelReservation(); setShowReservation(false); clearReservationDetailsRequest(); }} onAdvance={advanceReservation} onExtend={extendReservation} locale={locale} />}
       {selectedTrip && <TripDetail trip={selectedTrip} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setSelectedTrip(null); }} locale={locale} />}
       {showFinances && <FinanceDetail totalSpend={totalSpend} totalDays={totalDays} totalDistance={totalDistance} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowFinances(false); }} onSelectTrip={(trip) => { setShowFinances(false); setSelectedTrip(trip); }} locale={locale} />}
       {accountSheet && <AccountSheet kind={accountSheet} locale={locale} reduceMotion={!!reduceMotion} profile={profile} payment={payment} licence={licence} notices={notices} onClose={() => { onOverlayVisibilityChange(false); setAccountSheet(null); }} onSaveProfile={(next) => { saveProfile(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onSavePayment={(next) => { savePayment(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onSaveLicence={(next) => { saveLicence(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onMarkRead={markNoticesRead} />}

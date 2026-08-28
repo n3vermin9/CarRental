@@ -2,6 +2,7 @@
 :root {
   color-scheme: dark;
   --apple-bg: #000;
+  --apple-bg-rgb: 0, 0, 0;
   --apple-surface: #1c1c1e;
   --apple-raised: #2c2c2e;
   --apple-label: #fff;
@@ -50,7 +51,9 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .title-block h1, .secondary-header h1 { margin: 0; font-size: clamp(2.05rem, 9vw, 2.75rem); line-height: 1.03; letter-spacing: -.045em; font-weight: 750; font-optical-sizing: auto; }
 .title-block p { margin: .42rem 0 0; color: var(--apple-secondary); font-size: .86rem; line-height: 1.45; }
 
-.search-row { position: sticky; z-index: 14; top: 0; display: grid; grid-template-columns: 1fr 48px; gap: 9px; margin: -8px -16px; padding: 8px 16px; background: transparent; }
+.search-row { position: sticky; z-index: 14; top: 0; display: grid; grid-template-columns: 1fr 48px; gap: 9px; isolation: isolate; margin: -8px -16px; padding: 8px 16px; background: transparent; }
+.search-row::before { position: absolute; z-index: -1; top: calc(-1 * max(64px, env(safe-area-inset-top))); right: 0; bottom: -34px; left: 0; pointer-events: none; background: linear-gradient(180deg, rgb(var(--apple-bg-rgb)) 0%, rgb(var(--apple-bg-rgb)) 24%, rgba(var(--apple-bg-rgb), .98) 44%, rgba(var(--apple-bg-rgb), .78) 70%, rgba(var(--apple-bg-rgb), .32) 85%, rgba(var(--apple-bg-rgb), 0) 100%); opacity: 0; content: ""; transition: opacity .22s ease; }
+.search-row.scrolled::before { opacity: 1; }
 .apple-search { display: grid; height: 48px; grid-template-columns: 19px minmax(0, 1fr) 44px; align-items: center; column-gap: 9px; overflow: hidden; border: 1px solid var(--glass-edge); border-radius: var(--control-radius); padding: 0 4px 0 14px; color: var(--apple-secondary); background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 40%), var(--glass-fill); box-shadow: 0 10px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.14); backdrop-filter: blur(24px) saturate(175%); -webkit-backdrop-filter: blur(24px) saturate(175%); transition: border-color .24s ease, box-shadow .32s cubic-bezier(.22,.75,.24,1), background-color .24s ease, transform .24s cubic-bezier(.22,.75,.24,1); }
 .apple-search > svg { transition: color .22s ease, transform .32s cubic-bezier(.22,.75,.24,1); }
 .apple-search input { display: block; width: 100%; min-width: 0; height: 28px; border: 0; outline: 0; padding: 0; color: #fff; background: transparent; caret-color: var(--apple-blue); font-size: 17px; line-height: normal; }
@@ -328,8 +331,8 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .feature-overlay { z-index: 260; }
 .filter-overlay { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .feature-sheet { display: grid; width: 100%; max-width: 560px; max-height: calc(100dvh - 24px); grid-template-rows: auto minmax(0,1fr) auto; justify-self: center; overflow: hidden; border: 1px solid var(--glass-edge); border-radius: 30px; padding: 18px; background: linear-gradient(155deg, rgba(255,255,255,.07), transparent 34%), #1c1c1e; box-shadow: 0 32px 90px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.16); }
-.filter-sheet { height: auto; grid-template-rows: auto auto auto; }
-.filter-sheet .feature-sheet-scroll { min-height: auto; overflow: visible; padding: 4px 2px 6px; }
+.filter-sheet { height: min(536px, calc(100dvh - 24px)); grid-template-rows: auto minmax(0,1fr) auto; }
+.filter-sheet .feature-sheet-scroll { min-height: 0; overflow: hidden; padding: 4px 2px 6px; }
 .filter-sheet .filter-group { margin-top: 12px; }
 .feature-sheet-header { display: flex; min-height: 48px; align-items: center; justify-content: space-between; }
 .feature-sheet-header > div { display: grid; gap: 1px; }
@@ -363,7 +366,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .filter-tail { min-width: 0; }
 .inline-reset-action { width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: var(--control-radius); color: var(--apple-blue); background: transparent; font-size: .68rem; font-weight: 680; }
 .brand-picker { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,.1); border-radius: var(--control-radius); padding: 0 14px; color: var(--apple-label); background: var(--apple-raised); font-size: .72rem; font-weight: 620; text-align: left; }
-.brand-filter.focused { margin-top: 10px; }
+.brand-filter.focused { display: grid; height: calc(100% - 10px); min-height: 0; grid-template-rows: auto auto minmax(0,1fr); margin-top: 10px; }
 .brand-picker.open { border-color: rgba(10,132,255,.55); box-shadow: 0 0 0 3px rgba(10,132,255,.12); }
 .brand-picker-value, .brand-option-name { display: flex; min-width: 0; align-items: center; gap: 9px; }
 .brand-picker-value > span:last-child, .brand-option-name > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -371,6 +374,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .brand-option-logo { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; overflow: hidden; border: 1px solid rgba(60,60,67,.13); border-radius: 50%; color: #1c1c1e; background: #fff; box-shadow: 0 2px 7px rgba(0,0,0,.16); }
 .brand-option-logo img { width: 21px; height: 21px; object-fit: contain; }
 .brand-picker-menu { display: grid; max-height: 206px; gap: 2px; overflow-y: auto; margin-top: 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; padding: 5px; background: var(--apple-raised); box-shadow: 0 16px 38px rgba(0,0,0,.32); scrollbar-width: none; }
+.brand-filter.focused .brand-picker-menu { max-height: none; min-height: 0; }
 .brand-picker-menu::-webkit-scrollbar { display: none; }
 .brand-picker-menu button { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; border: 0; border-radius: 13px; padding: 0 11px; color: var(--apple-label); background: transparent; font-size: .7rem; text-align: left; }
 .brand-picker-menu button.selected { color: var(--apple-blue); background: rgba(10,132,255,.12); font-weight: 700; }
@@ -443,6 +447,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .apple-login label { margin: 8px 2px 0; color: var(--apple-secondary); font-size: .68rem; font-weight: 650; }
 .apple-login input { width: 100%; height: 50px; border: 1px solid rgba(255,255,255,.08); border-radius: var(--control-radius); padding: 0 14px; outline: 0; color: #fff; background: var(--apple-surface); font-size: .86rem; }
 .apple-login input:focus { border-color: var(--apple-blue); }
+.apple-login .masked-login-input { -webkit-text-security: disc; }
 .apple-login form > button { display: flex; width: 100%; height: 52px; align-items: center; justify-content: space-between; margin-top: 13px; border: 0; border-radius: var(--control-radius); padding: 0 15px 0 17px; color: #fff; background: var(--apple-blue); font-size: .86rem; font-weight: 700; box-shadow: 0 12px 30px rgba(10,132,255,.24); }
 .privacy-note { display: flex; align-items: flex-start; gap: 7px; margin: 18px 2px 0; color: var(--apple-secondary); font-size: .65rem; line-height: 1.45; }
 .privacy-note svg { flex: none; color: var(--apple-green); }
@@ -450,6 +455,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 :root[data-theme="light"] {
   color-scheme: light;
   --apple-bg: #f2f2f7;
+  --apple-bg-rgb: 242, 242, 247;
   --apple-surface: #fff;
   --apple-raised: #e9e9ee;
   --apple-label: #000;
