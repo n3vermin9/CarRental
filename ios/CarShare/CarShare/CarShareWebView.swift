@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import UIKit
 import ObjectiveC.runtime
 
 private final class InputAccessoryViewSuppressor: NSObject {
@@ -45,6 +46,7 @@ struct CarShareWebView: UIViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
         configuration.allowsInlineMediaPlayback = true
+        configuration.userContentController.add(context.coordinator, name: "haptic")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -61,15 +63,43 @@ struct CarShareWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "haptic")
+    }
+
     func makeCoordinator() -> Coordinator {
         Coordinator(developmentURL: developmentURL)
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         private let developmentURL: URL
 
         init(developmentURL: URL) {
             self.developmentURL = developmentURL
+        }
+
+        func userContentController(
+            _ userContentController: WKUserContentController,
+            didReceive message: WKScriptMessage
+        ) {
+            guard message.name == "haptic" else { return }
+            let kind = message.body as? String ?? "selection"
+            DispatchQueue.main.async {
+                switch kind {
+                case "success":
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.prepare()
+                    generator.notificationOccurred(.success)
+                case "impact":
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.prepare()
+                    generator.impactOccurred(intensity: 0.82)
+                default:
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.prepare()
+                    generator.impactOccurred(intensity: 0.7)
+                }
+            }
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation?) {

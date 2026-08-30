@@ -33,8 +33,12 @@ button, input, select, textarea { border-radius: var(--control-radius); font: in
 button { min-width: 44px; min-height: 44px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outline: 3px solid rgba(10, 132, 255, .72); outline-offset: 2px; }
 
-.apple-app.app-shell { position: relative; height: 100dvh; min-height: 0; max-width: 720px; margin: auto; overflow: hidden; background: var(--apple-bg); color: var(--apple-label); }
+.apple-app.app-shell { position: relative; width: 100%; height: 100dvh; min-height: 0; max-width: 720px; margin: auto; overflow: hidden; background: var(--apple-bg); color: var(--apple-label); }
+@media (max-width: 720px) {
+  body .apple-app.app-shell { width: 100% !important; height: 100dvh !important; max-width: none !important; margin: 0 !important; border-radius: 0 !important; }
+}
 .apple-app .tab-stage { position: absolute; inset: 0; height: 100%; overflow: hidden; background: var(--apple-bg); will-change: transform, opacity; }
+.apple-app .tab-stage.swipe-enabled { touch-action: pan-y; overscroll-behavior-x: none; }
 .explore-page, .secondary-page { height: 100%; overflow-y: auto; padding: calc(max(18px, env(safe-area-inset-top)) + 4px) 16px calc(108px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 92% -7%, rgba(10,132,255,.14), transparent 29%), var(--apple-bg); scrollbar-width: none; overscroll-behavior: contain; }
 .explore-page::-webkit-scrollbar, .secondary-page::-webkit-scrollbar, .apple-detail::-webkit-scrollbar { display: none; }
 
@@ -81,10 +85,10 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 
 .vehicle-list { display: grid; align-content: start; overflow-anchor: none; }
 .vehicle-set { display: grid; align-content: start; gap: 11px; transform-origin: top center; }
-.vehicle-card { display: grid; grid-template-columns: minmax(116px, 38%) 1fr; min-height: 154px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); border-radius: var(--apple-radius); background: var(--apple-surface); box-shadow: 0 10px 24px rgba(0,0,0,.24); cursor: pointer; transform-origin: center; }
+.vehicle-card { display: grid; grid-template-columns: minmax(116px, 38%) 1fr; min-height: 154px; overflow: hidden; border: 1px solid rgba(255,255,255,.06); border-radius: var(--apple-radius); background: var(--apple-surface); box-shadow: 0 10px 24px rgba(0,0,0,.24); contain: layout paint style; content-visibility: auto; contain-intrinsic-size: 154px; cursor: pointer; transform-origin: center; }
 .vehicle-photo { position: relative; min-width: 0; overflow: hidden; background: #fff; }
 .vehicle-photo::after { display: none; }
-.vehicle-photo > img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #fff; }
+.vehicle-photo > img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #fff; image-rendering: auto; }
 .brand-badge { position: absolute; z-index: 2; top: 9px; right: 9px; display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid rgba(60,60,67,.12); border-radius: 50%; background: rgba(255,255,255,.9); box-shadow: 0 4px 12px rgba(60,60,67,.14), inset 0 1px 0 #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .brand-badge img { width: 22px; height: 22px; object-fit: contain; padding: 0; background: transparent; filter: grayscale(1) brightness(0); opacity: .82; }
 .vehicle-copy { display: flex; min-width: 0; flex-direction: column; padding: 12px 13px 12px 14px; }
@@ -159,9 +163,11 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .apple-signout:active { transform: scale(.98); background: rgba(255,69,58,.18); }
 
 .trip-overlay { position: absolute; z-index: 130; inset: 0; height: 100%; overflow-y: auto; padding: calc(max(16px, env(safe-area-inset-top)) + 2px) 16px calc(56px + env(safe-area-inset-bottom)); background: var(--apple-bg); scrollbar-width: none; overscroll-behavior: contain; }
+.horizontal-swipe-surface { touch-action: pan-y; overscroll-behavior-x: none; }
 .trip-overlay::-webkit-scrollbar { display: none; }
-.trip-detail-header { position: sticky; z-index: 4; top: calc(-1 * max(16px, env(safe-area-inset-top))); display: grid; min-height: 70px; grid-template-columns: 44px 1fr 44px; align-items: center; margin: calc(-1 * (max(16px, env(safe-area-inset-top)) + 2px)) -16px 18px; padding: max(16px, env(safe-area-inset-top)) 16px 8px; background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.9) 56%, rgba(0,0,0,0) 100%); backdrop-filter: none; -webkit-backdrop-filter: none; }
-.trip-detail-header > button { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--glass-edge); border-radius: 50%; color: var(--apple-blue); background: radial-gradient(circle at 30% 10%, rgba(255,255,255,.2), transparent 35%), var(--glass-fill); box-shadow: 0 8px 22px rgba(0,0,0,.42), inset 0 1px 0 var(--glass-highlight); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); }
+.trip-detail-header { position: sticky; z-index: 4; top: calc(-1 * max(16px, env(safe-area-inset-top))); display: grid; min-height: 70px; grid-template-columns: 44px 1fr minmax(44px,auto); align-items: center; margin: calc(-1 * (max(16px, env(safe-area-inset-top)) + 2px)) -16px 18px; padding: max(16px, env(safe-area-inset-top)) 16px 8px; background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.9) 56%, rgba(0,0,0,0) 100%); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.trip-detail-header > button:not(.header-text-action) { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--glass-edge); border-radius: 50%; color: var(--apple-blue); background: radial-gradient(circle at 30% 10%, rgba(255,255,255,.2), transparent 35%), var(--glass-fill); box-shadow: 0 8px 22px rgba(0,0,0,.42), inset 0 1px 0 var(--glass-highlight); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); }
+.trip-detail-header .header-text-action { width: auto; min-width: 44px; min-height: 44px; border: 0; padding: 0 2px 0 10px; color: var(--apple-blue); background: transparent; font-size: .76rem; font-weight: 650; }
 .trip-detail-header > div { text-align: center; }
 .trip-detail-header span { color: var(--apple-secondary); font-size: .62rem; }
 .trip-detail-header h2 { margin: 1px 0 0; font-size: .95rem; letter-spacing: -.015em; }
@@ -211,29 +217,40 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .apple-tabbar .tab-icon { display: grid; height: 25px; place-items: center; color: inherit; }
 .apple-tabbar small { color: inherit; font-size: .57rem; font-weight: 620; line-height: 11px; }
 .apple-tabbar button.active { color: var(--apple-blue); }
+.desktop-nav-brand, .desktop-nav-label { display: none; }
 
-.apple-detail.car-detail { position: absolute; z-index: 110; inset: 0; height: 100%; overflow-y: auto; padding: 0 0 calc(98px + env(safe-area-inset-bottom)); background: var(--apple-bg); overscroll-behavior: contain; scrollbar-width: none; }
+.apple-detail.car-detail { position: absolute; z-index: 110; inset: 0; height: 100%; overflow: hidden; padding: 0; background: var(--apple-bg); overscroll-behavior: contain; }
+.car-detail-scroll { height: 100%; overflow-x: hidden; overflow-y: auto; padding-bottom: calc(98px + env(safe-area-inset-bottom)); overscroll-behavior: contain; scrollbar-width: none; }
+.car-detail-scroll::-webkit-scrollbar { display: none; }
 .apple-detail .detail-hero { height: min(53dvh, 470px); min-height: 350px; }
 .apple-detail .detail-hero > img { object-fit: contain; padding: 32px 12px 78px; background: #fff; }
 .apple-detail .detail-scrim { background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.88) 100%); }
 .apple-detail .detail-hero-copy > span { display: flex; align-items: center; gap: 3px; }
 .apple-detail .detail-save.saved { color: var(--apple-red); }
 .apple-detail .detail-content { margin-top: -24px; border-radius: 26px 26px 0 0; }
-.apple-detail .detail-reserve b { display: flex; align-items: center; gap: 5px; }
-.apple-detail .detail-reserve { border-radius: var(--control-radius); }
+.apple-detail .detail-reserve { justify-content: center; border-radius: var(--control-radius); text-align: center; }
 
 .detail-glass-button, .detail-action { border-color: var(--glass-edge); background: radial-gradient(circle at 28% 0, rgba(255,255,255,.2), transparent 36%), var(--glass-fill-strong); box-shadow: 0 16px 44px rgba(0,0,0,.62), inset 0 1px 0 var(--glass-highlight); backdrop-filter: blur(30px) saturate(190%); -webkit-backdrop-filter: blur(30px) saturate(190%); }
-.detail-action { border-radius: var(--control-radius); }
+.apple-detail .detail-action { position: absolute; right: 14px; left: 14px; width: auto; transform: none; border-radius: var(--control-radius); }
 .apple-detail .detail-reserve:disabled { cursor: default; opacity: 1; }
 
 .reservation-overlay { position: absolute; z-index: 220; inset: 0; display: grid; align-items: end; padding: 12px 12px max(12px, env(safe-area-inset-bottom)); background: rgba(0,0,0,.58); backdrop-filter: blur(12px) saturate(130%); -webkit-backdrop-filter: blur(12px) saturate(130%); }
 .reservation-sheet { position: relative; display: grid; width: 100%; max-width: 520px; max-height: calc(100dvh - 24px); grid-template-rows: auto minmax(0,1fr) auto; justify-self: center; overflow: hidden; border: 1px solid var(--glass-edge); border-radius: 30px; padding: 18px; background: linear-gradient(155deg, rgba(255,255,255,.07), transparent 34%), #1c1c1e; box-shadow: 0 32px 90px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.16); transform-origin: center bottom; will-change: transform, opacity; }
+.sheet-grabber-zone { position: absolute; z-index: 12; top: 0; left: 50%; display: grid; width: 72px; height: 25px; place-items: center; transform: translateX(-50%); touch-action: none; cursor: grab; }
+.sheet-grabber-zone:active { cursor: grabbing; }
+.sheet-grabber-zone > span { width: 36px; height: 5px; border-radius: 999px; background: rgba(235,235,245,.3); }
 .reservation-sheet::-webkit-scrollbar { display: none; }
-.reservation-header { display: flex; min-height: 48px; align-items: center; justify-content: space-between; }
-.reservation-header > div { display: grid; gap: 1px; }
+.reservation-header { display: grid; min-height: 48px; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 8px; }
+.reservation-header > div { display: grid; min-width: 0; gap: 1px; text-align: center; }
 .reservation-header span { color: var(--apple-blue); font-size: .62rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .reservation-header h2 { margin: 0; font-size: 1.28rem; line-height: 1.2; letter-spacing: -.025em; }
 .reservation-header > button { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid rgba(255,255,255,.14); border-radius: 50%; color: var(--apple-secondary); background: rgba(255,255,255,.07); }
+.reservation-header .reservation-back { color: var(--apple-blue); }
+.reservation-header-spacer { width: 44px; height: 44px; }
+.reservation-step-viewport { min-height: 0; overflow: hidden; }
+.reservation-step-content { height: 100%; }
+.reservation-sheet.step-rental { height: min(528px, calc(100dvh - 24px)); }
+.reservation-sheet.step-rental.editing-reservation { height: min(578px, calc(100dvh - 24px)); }
 .reservation-scroll-content { min-height: 0; overflow-y: auto; padding: 0 1px; scrollbar-width: none; overscroll-behavior: contain; }
 .reservation-scroll-content::-webkit-scrollbar { display: none; }
 .reservation-car { display: grid; min-height: 92px; grid-template-columns: 112px minmax(0,1fr); align-items: center; gap: 13px; margin: 10px 0 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); border-radius: 22px; background: var(--apple-raised); }
@@ -246,9 +263,10 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .checkout-section h3 { margin: 0 2px 9px; font-size: .95rem; line-height: 1.25; letter-spacing: -.018em; font-weight: 760; }
 .rental-controls { display: grid; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; background: var(--apple-raised); }
 .pickup-control, .duration-control { position: relative; display: grid; min-width: 0; min-height: 62px; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; border: 0; border-radius: 0; padding: 0 14px; background: transparent; }
-.pickup-control { z-index: 4; border-bottom: .5px solid var(--apple-separator); }
+.pickup-control { z-index: 4; }
+.duration-control { border-bottom: .5px solid var(--apple-separator); }
 .pickup-control > span, .duration-control > span { color: #fff; font-size: .72rem; font-weight: 650; }
-.pickup-control > button { display: flex; width: max-content; min-width: 44px; height: 44px; align-items: center; justify-content: flex-end; gap: 5px; border: 0; border-radius: var(--control-radius); padding: 0 10px 0 12px; color: var(--apple-blue); background: rgba(255,255,255,.07); }
+.pickup-control > button { display: flex; width: 148px; min-width: 148px; height: 44px; align-items: center; justify-content: center; gap: 5px; border: 0; border-radius: var(--control-radius); padding: 0 10px; color: var(--apple-blue); background: transparent; }
 .pickup-control > button strong { overflow: hidden; font-size: .7rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .pickup-control > button > span { display: grid; flex: none; place-items: center; }
 .ios-date-menu { position: absolute; z-index: 20; top: 54px; right: 10px; width: 206px; max-height: 264px; overflow-y: auto; border: 1px solid rgba(255,255,255,.16); border-radius: 18px; padding: 5px; background: rgba(38,38,40,.92); box-shadow: 0 22px 60px rgba(0,0,0,.64), inset 0 1px 0 rgba(255,255,255,.1); backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%); transform-origin: top right; scrollbar-width: none; }
@@ -258,7 +276,19 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .ios-date-menu > button.selected { border-radius: 12px; color: var(--apple-blue); background: rgba(10,132,255,.14); font-weight: 700; }
 .ios-date-menu > button:active { background: rgba(255,255,255,.1); }
 .ios-date-menu > button svg { flex: none; color: var(--apple-blue); }
-.duration-control > div { display: grid; width: 148px; height: 44px; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; overflow: hidden; border: 0; border-radius: var(--control-radius); background: rgba(255,255,255,.07); }
+.ios-date-wheel { position: absolute; z-index: 20; top: 54px; right: 12px; left: 12px; display: grid; height: 180px; grid-template-columns: minmax(0,1.65fr) .85fr; overflow: hidden; border: 0; border-radius: 16px; background: rgba(28,28,30,.96); box-shadow: 0 18px 48px rgba(0,0,0,.52); backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); }
+.ios-date-wheel::before { position: absolute; z-index: 0; top: 72px; right: 7px; left: 7px; height: 36px; border-radius: 8px; background: rgba(118,118,128,.22); content: ""; pointer-events: none; }
+.ios-wheel-column { position: relative; z-index: 1; height: 180px; overflow-x: hidden; overflow-y: auto; padding: 72px 0; scroll-behavior: auto; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%); }
+.ios-wheel-column::-webkit-scrollbar { display: none; }
+.ios-wheel-column button { display: block; width: 100%; min-width: 0; height: 36px; min-height: 36px; overflow: hidden; border: 0; border-radius: 0; padding: 0 3px; color: var(--apple-secondary); background: transparent; font-size: .72rem; font-weight: 450; line-height: 36px; text-align: center; text-overflow: ellipsis; white-space: nowrap; scroll-snap-align: center; }
+.ios-wheel-column.date button { padding-left: 8px; text-align: right; }
+.ios-wheel-column.hour button { padding-right: 10px; text-align: center; }
+.ios-wheel-column button[aria-selected="true"] { color: var(--apple-label); font-size: .79rem; font-weight: 520; }
+.ios-wheel-column button:disabled { color: var(--apple-secondary); opacity: .7; }
+.ios-wheel-column button:active { opacity: .55; }
+.duration-control > div { display: grid; width: 148px; height: 44px; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; overflow: hidden; border: 0; border-radius: var(--control-radius); background: transparent; }
+.rental-controls.date-focused .pickup-control { border-bottom-color: transparent; }
+.rental-controls.date-focused .ios-date-menu { right: 12px; left: 12px; width: auto; max-height: 238px; }
 .duration-control button { display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 50%; color: var(--apple-blue); background: transparent; font-size: 1.08rem; }
 .duration-control button:disabled { color: var(--apple-tertiary); }
 .duration-control strong { overflow: hidden; text-align: center; font-size: .7rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
@@ -278,9 +308,15 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .checkout-receipt > div { display: flex; min-height: 46px; align-items: center; justify-content: space-between; border-bottom: .5px solid var(--apple-separator); padding: 0 14px; font-size: .7rem; }
 .checkout-receipt > div:last-child { min-height: 52px; border-bottom: 0; font-size: .79rem; }
 .checkout-receipt span { color: var(--apple-secondary); }
-.confirm-reservation { position: relative; z-index: 30; display: flex; width: calc(100% - 8px); min-height: 56px; align-items: center; justify-content: space-between; margin: 12px 4px 0; border: 1px solid rgba(160,213,255,.5); border-radius: var(--control-radius); padding: 0 18px; color: #fff; background: radial-gradient(circle at 28% 0, rgba(255,255,255,.27), transparent 38%), rgba(10,132,255,.9); box-shadow: 0 -10px 34px rgba(0,0,0,.5), 0 12px 30px rgba(10,132,255,.3), inset 0 1px 0 rgba(255,255,255,.36); backdrop-filter: blur(24px) saturate(175%); -webkit-backdrop-filter: blur(24px) saturate(175%); font-size: .78rem; font-weight: 720; }
-.confirm-reservation b { font-size: .69rem; }
+.confirm-reservation { position: relative; z-index: 30; display: flex; width: calc(100% - 8px); min-height: 56px; align-items: center; justify-content: center; margin: 12px 4px 0; border: 1px solid rgba(160,213,255,.5); border-radius: var(--control-radius); padding: 0 18px; color: #fff; background: radial-gradient(circle at 28% 0, rgba(255,255,255,.27), transparent 38%), rgba(10,132,255,.9); box-shadow: 0 -10px 34px rgba(0,0,0,.5), 0 12px 30px rgba(10,132,255,.3), inset 0 1px 0 rgba(255,255,255,.36); backdrop-filter: blur(24px) saturate(175%); -webkit-backdrop-filter: blur(24px) saturate(175%); font-size: .78rem; font-weight: 720; text-align: center; }
 .confirm-reservation:disabled { opacity: .45; }
+.reservation-checkout-actions { display: grid; gap: 2px; background: transparent; }
+.rental-live-total { display: grid; min-height: 70px; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 14px; margin: 7px 4px 0; border-top: .5px solid var(--apple-separator); padding: 8px 6px 0; }
+.rental-live-total > span { display: grid; min-width: 0; gap: 1px; }
+.rental-live-total strong { color: var(--apple-label); font-size: .68rem; font-weight: 650; }
+.rental-live-total small { overflow: hidden; color: var(--apple-secondary); font-size: .58rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.rental-live-total > b { min-width: max-content; color: var(--apple-label); font-size: 1rem; letter-spacing: -.025em; text-align: right; }
+.cancel-edit-reservation { width: calc(100% - 8px); min-height: 44px; margin: 2px 4px 0; border: 0; border-radius: var(--control-radius); color: var(--apple-red); background: transparent; font-size: .7rem; font-weight: 650; text-align: center; }
 
 .upcoming-heading { min-height: 30px; margin-top: 0; }
 .upcoming-reservation { display: grid; width: 100%; min-height: 112px; grid-template-columns: 112px minmax(0,1fr) 18px; align-items: center; gap: 13px; overflow: hidden; border: 1px solid rgba(10,132,255,.34); border-radius: 22px; padding: 0 13px 0 0; color: #fff; background: linear-gradient(135deg, rgba(10,132,255,.14), transparent 48%), var(--apple-surface); box-shadow: 0 12px 30px rgba(0,0,0,.24); text-align: left; }
@@ -293,44 +329,91 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .upcoming-reservation > svg { color: var(--apple-tertiary); }
 .upcoming-reservation + .activity-card { margin-top: 9px; }
 
-.reservation-status { display: flex; align-items: center; gap: 13px; border: 1px solid rgba(48,209,88,.22); border-radius: 22px; padding: 17px; background: rgba(48,209,88,.08); }
-.reservation-status > div { display: grid; min-width: 0; gap: 2px; }
-.reservation-status p { margin: 0; color: var(--apple-green); font-size: .62rem; font-weight: 750; text-transform: uppercase; }
-.reservation-status h2 { margin: 0; font-size: 1rem; letter-spacing: -.02em; }
-.reservation-status small { color: var(--apple-secondary); font-size: .61rem; }
-.reservation-detail-car { margin: 0; }
-.pickup-instructions { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 11px; border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 14px; background: var(--apple-surface); }
+.reservation-overview { overflow: hidden; border: 0; border-radius: 20px; background: var(--apple-surface); box-shadow: none; }
+.reservation-overview-status { display: flex; align-items: center; gap: 10px; padding: 14px 14px 9px; }
+.reservation-overview-status .completion-mark { width: 36px; height: 36px; flex: none; }
+.reservation-overview-status > div { display: grid; min-width: 0; gap: 2px; }
+.reservation-overview-status p { margin: 0; color: var(--apple-green); font-size: .64rem; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
+.reservation-overview-status small { color: var(--apple-secondary); font-size: .61rem; }
+.reservation-overview-dates { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 14px 14px; }
+.reservation-overview-dates h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.025em; }
+.reservation-overview-dates span { flex: none; padding: 0; color: var(--apple-secondary); background: transparent; font-size: .61rem; font-weight: 600; }
+.reservation-overview-car { display: grid; min-height: 96px; grid-template-columns: 96px minmax(0,1fr); align-items: center; gap: 12px; border-top: .5px solid var(--apple-separator); padding: 11px 14px; }
+.reservation-overview-car > img { width: 96px; height: 72px; object-fit: contain; border-radius: 13px; padding: 7px; background: #fff; }
+.reservation-overview-car > div { display: grid; min-width: 0; gap: 2px; padding: 0; }
+.reservation-overview-car span { color: var(--apple-blue); font-size: .58rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.reservation-overview-car strong { overflow: hidden; font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
+.reservation-overview-car small { overflow: hidden; color: var(--apple-secondary); font-size: .61rem; text-overflow: ellipsis; white-space: nowrap; }
+.pickup-instructions { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 11px; border: 0; border-radius: 20px; padding: 15px; background: var(--apple-surface); }
 .pickup-instructions > div { display: grid; min-width: 0; gap: 5px; }
 .pickup-instructions strong { font-size: .77rem; }
 .pickup-instructions p { margin: 0; color: var(--apple-secondary); font-size: .65rem; line-height: 1.45; }
 .pickup-instructions small { display: flex; align-items: center; gap: 5px; color: var(--apple-blue); font-size: .61rem; }
-.mock-receipt-note { display: flex; align-items: flex-start; gap: 6px; margin: 8px 3px 0; color: var(--apple-secondary); font-size: .59rem; }
-.mock-receipt-note svg { flex: none; color: var(--apple-green); }
-.reservation-actions { display: grid; gap: 9px; margin-top: 4px; }
-.reservation-actions button { width: 100%; min-height: 52px; border: 0; border-radius: var(--control-radius); font-size: .75rem; font-weight: 700; }
-.modify-reservation { color: #fff; background: var(--apple-blue); box-shadow: 0 10px 28px rgba(10,132,255,.22); }
-.cancel-reservation { color: var(--apple-red); background: rgba(255,69,58,.1); }
-.cancel-reservation.confirming { color: #fff; background: var(--apple-red); }
+.payment-paid { display: inline-flex; align-items: center; gap: 4px; color: var(--apple-green); }
 .reservation-detail { display: grid; grid-template-rows: auto minmax(0,1fr) auto; overflow: hidden; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-.reservation-detail .trip-detail-header { position: relative; top: auto; margin-bottom: 10px; }
-.reservation-detail .trip-overlay-content { width: 100%; height: 100%; min-height: 0; align-self: stretch; overflow-y: auto; margin: 0 auto; padding-bottom: 8px; scrollbar-width: none; overscroll-behavior: contain; }
+.reservation-detail .trip-detail-header { position: relative; top: auto; margin-bottom: 8px; background: var(--apple-bg); }
+.reservation-detail .trip-detail-header > button:not(.header-text-action) { border: 0; color: var(--apple-blue); background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.reservation-detail .trip-overlay-content { width: 100%; height: 100%; min-height: 0; grid-auto-rows: max-content; align-content: start; align-self: stretch; gap: 13px; overflow-y: auto; margin: 0 auto; padding: 0 0 14px; scrollbar-width: none; overscroll-behavior: contain; }
 .reservation-detail .trip-overlay-content::-webkit-scrollbar { display: none; }
-.reservation-floating-action { width: 100%; max-width: 600px; min-height: 56px; justify-self: center; margin-top: 10px; border: 1px solid rgba(160,213,255,.5); border-radius: var(--control-radius); font-size: .78rem; font-weight: 720; background: radial-gradient(circle at 28% 0, rgba(255,255,255,.27), transparent 38%), rgba(10,132,255,.9); box-shadow: 0 -10px 34px rgba(0,0,0,.52), 0 12px 30px rgba(10,132,255,.3), inset 0 1px 0 rgba(255,255,255,.36); backdrop-filter: blur(24px) saturate(175%); -webkit-backdrop-filter: blur(24px) saturate(175%); }
-.reservation-floating-action { display: flex; align-items: center; justify-content: center; gap: 7px; }
-.lifecycle-status.status-active { border-color: rgba(10,132,255,.34); background: rgba(10,132,255,.1); }
+.reservation-detail .detail-block h3 { margin: 10px 4px 7px; color: var(--apple-secondary); font-size: .68rem; font-weight: 600; letter-spacing: 0; }
+.reservation-detail .receipt-list { border: 0; border-radius: 20px; box-shadow: none; }
+.reservation-action-bar { display: grid; width: 100%; max-width: 600px; justify-self: center; gap: 2px; border: 0; padding-top: 10px; background: transparent; }
+.reservation-action-bar button { font-size: .74rem; font-weight: 650; text-align: center; }
+.reservation-action-bar .lifecycle-action { display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: center; }
+.lifecycle-status.status-active { background: var(--apple-surface); }
 .lifecycle-status.status-active .completion-mark { color: var(--apple-blue); background: rgba(10,132,255,.14); }
-.lifecycle-status.status-active p { color: var(--apple-blue); }
-.lifecycle-status.status-completed { border-color: var(--apple-separator); background: var(--apple-surface); }
-.active-rental-summary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
-.active-rental-summary > div { display: grid; min-height: 78px; align-content: center; gap: 3px; border: 1px solid rgba(10,132,255,.22); border-radius: 18px; padding: 14px; background: rgba(10,132,255,.08); }
+.lifecycle-status.status-active .reservation-overview-status p { color: var(--apple-blue); }
+.lifecycle-status.status-completed { background: var(--apple-surface); }
+.active-rental-summary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0; overflow: hidden; border-radius: 20px; background: var(--apple-surface); }
+.active-rental-summary > div { display: grid; min-height: 72px; align-content: center; gap: 3px; border: 0; border-radius: 0; padding: 14px; background: transparent; }
+.active-rental-summary > div + div { border-left: .5px solid var(--apple-separator); }
 .active-rental-summary span { font-size: .9rem; font-weight: 760; }
 .active-rental-summary small { color: var(--apple-secondary); font-size: .62rem; }
-.lifecycle-action { color: #fff; background: var(--apple-blue); box-shadow: 0 9px 24px rgba(10,132,255,.2); }
-.mock-lifecycle-note { margin: 0 3px; color: var(--apple-tertiary); font-size: .59rem; text-align: center; }
+
+.active-rental-page { display: grid; grid-template-rows: auto minmax(0,1fr) auto; overflow: hidden; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+.active-rental-page .trip-detail-header { position: relative; top: auto; margin-bottom: 8px; background: var(--apple-bg); }
+.active-rental-page .trip-detail-header > button { border: 0; color: var(--apple-blue); background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.active-rental-content { display: grid; width: 100%; max-width: 600px; min-height: 0; align-content: start; justify-self: center; gap: 14px; overflow-y: auto; padding: 0 0 16px; scrollbar-width: none; overscroll-behavior: contain; }
+.active-rental-content::-webkit-scrollbar { display: none; }
+.active-drive-card { position: relative; min-height: 242px; overflow: hidden; border-radius: 26px; background: radial-gradient(circle at 80% 5%, rgba(100,174,255,.32), transparent 44%), linear-gradient(145deg, #093d78, #08284f 58%, #101820); box-shadow: 0 18px 42px rgba(0,60,130,.25); }
+.active-drive-card > img { position: absolute; right: -8%; bottom: 25px; width: 76%; height: 142px; object-fit: contain; filter: drop-shadow(0 18px 18px rgba(0,0,0,.34)); }
+.active-drive-status { position: absolute; z-index: 2; top: 16px; right: 16px; left: 16px; display: flex; align-items: center; gap: 7px; }
+.active-drive-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--apple-green); box-shadow: 0 0 0 5px rgba(48,209,88,.13); }
+.active-drive-status span { color: #fff; font-size: .65rem; font-weight: 720; }
+.active-drive-status small { margin-left: auto; color: rgba(255,255,255,.6); font-size: .58rem; }
+.active-drive-copy { position: absolute; z-index: 2; right: 18px; bottom: 17px; left: 18px; }
+.active-drive-copy > span { color: #78b7ff; font-size: .58rem; font-weight: 760; letter-spacing: .07em; text-transform: uppercase; }
+.active-drive-copy h1 { margin: 3px 0; font-size: 1.35rem; letter-spacing: -.035em; }
+.active-drive-copy p { margin: 0; color: rgba(255,255,255,.62); font-size: .63rem; }
+.active-time-card { display: grid; grid-template-columns: .72fr 1.28fr; overflow: hidden; border-radius: 20px; background: var(--apple-surface); }
+.active-time-card > div { display: grid; min-height: 78px; align-content: center; gap: 4px; padding: 14px; }
+.active-time-card > div + div { border-left: .5px solid var(--apple-separator); }
+.active-time-card small { color: var(--apple-secondary); font-size: .6rem; }
+.active-time-card strong { font-size: .82rem; line-height: 1.25; }
+.active-control-section h3 { margin: 3px 4px 9px; color: var(--apple-secondary); font-size: .68rem; font-weight: 600; }
+.active-control-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.active-control-grid button { display: grid; min-height: 88px; place-content: center; justify-items: center; gap: 8px; border: 0; border-radius: 20px; color: var(--apple-blue); background: var(--apple-surface); box-shadow: none; }
+.active-control-grid button span { color: var(--apple-label); font-size: .64rem; font-weight: 650; text-align: center; }
+.active-control-grid button.enabled { color: #fff; background: var(--apple-blue); }
+.active-control-grid button.enabled span { color: #fff; }
+.active-return-card { display: grid; min-height: 88px; grid-template-columns: 58px minmax(0,1fr) 24px; align-items: center; gap: 10px; border-radius: 20px; padding: 13px; background: var(--apple-surface); }
+.active-return-card > div:nth-child(2) { display: grid; min-width: 0; gap: 3px; }
+.active-return-card small { color: var(--apple-blue); font-size: .58rem; font-weight: 700; text-transform: uppercase; }
+.active-return-card strong { overflow: hidden; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.active-return-card p { margin: 0; color: var(--apple-secondary); font-size: .59rem; }
+.active-return-card > svg { color: var(--apple-blue); }
+.active-route-visual { position: relative; display: grid; height: 58px; justify-items: center; }
+.active-route-visual > span { z-index: 1; display: grid; width: 27px; height: 27px; place-items: center; border-radius: 9px; color: #fff; background: var(--apple-blue); }
+.active-route-visual > span:last-child { align-self: end; color: var(--apple-blue); background: #fff; }
+.active-route-visual > i { position: absolute; top: 22px; bottom: 22px; width: 2px; background: var(--apple-blue); }
+.active-safety-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; color: var(--apple-secondary); font-size: .61rem; }
+.active-safety-note svg { color: var(--apple-green); }
+.active-rental-footer { width: 100%; max-width: 600px; justify-self: center; padding-top: 10px; }
+.active-rental-footer .primary-action { width: 100%; min-height: 52px; }
 
 .feature-overlay { z-index: 260; }
 .filter-overlay { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.feature-sheet { display: grid; width: 100%; max-width: 560px; max-height: calc(100dvh - 24px); grid-template-rows: auto minmax(0,1fr) auto; justify-self: center; overflow: hidden; border: 1px solid var(--glass-edge); border-radius: 30px; padding: 18px; background: linear-gradient(155deg, rgba(255,255,255,.07), transparent 34%), #1c1c1e; box-shadow: 0 32px 90px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.16); }
+.feature-sheet { position: relative; display: grid; width: 100%; max-width: 560px; max-height: calc(100dvh - 24px); grid-template-rows: auto minmax(0,1fr) auto; justify-self: center; overflow: hidden; border: 1px solid var(--glass-edge); border-radius: 30px; padding: 18px; background: linear-gradient(155deg, rgba(255,255,255,.07), transparent 34%), #1c1c1e; box-shadow: 0 32px 90px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.16); }
 .filter-sheet { height: min(536px, calc(100dvh - 24px)); grid-template-rows: auto minmax(0,1fr) auto; }
 .filter-sheet .feature-sheet-scroll { min-height: 0; overflow: hidden; padding: 4px 2px 6px; }
 .filter-sheet .filter-group { margin-top: 12px; }
@@ -412,15 +495,18 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .verification-toggle > input { position: absolute; opacity: 0; pointer-events: none; }
 .verification-toggle > span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; color: transparent; background: rgba(118,118,128,.28); }
 .verification-toggle > input:checked + span { color: #fff; background: var(--apple-blue); }
-.notification-center { min-height: 0; overflow-y: auto; padding-top: 12px; scrollbar-width: none; }
-.notification-center article { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; border-bottom: .5px solid var(--apple-separator); padding: 12px 2px; }
+.notifications-sheet { height: auto; max-height: calc(100dvh - 24px); grid-template-rows: auto auto; }
+.notification-center { display: grid; min-height: 0; gap: 12px; overflow: hidden; padding-top: 12px; }
+.notification-list { overflow: hidden; border-radius: 20px; background: var(--apple-surface); }
+.notification-center article { display: grid; min-height: 70px; grid-template-columns: 36px minmax(0,1fr); align-items: center; gap: 10px; border-bottom: .5px solid var(--apple-separator); padding: 9px 12px; }
+.notification-center article:last-child { border-bottom: 0; }
 .notification-center article > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; color: #fff; background: var(--apple-blue); }
 .notification-center article > div { display: grid; gap: 2px; }
 .notification-center article strong { font-size: .76rem; }
 .notification-center article p { margin: 0; color: var(--apple-secondary); font-size: .64rem; line-height: 1.4; }
 .notification-center article small { color: var(--apple-tertiary); font-size: .56rem; }
 .notification-center article.read { opacity: .58; }
-.notification-center > .primary-action { width: 100%; margin-top: 12px; }
+.notification-center > .notification-read-action { width: 100%; margin: 0; }
 .empty-notifications { display: grid; min-height: 220px; place-content: center; justify-items: center; color: var(--apple-secondary); }
 .empty-notifications p { margin: 8px 0 0; font-size: .72rem; }
 .app-toast { position: fixed; z-index: 500; right: 18px; bottom: calc(92px + env(safe-area-inset-bottom)); left: 18px; display: flex; width: max-content; max-width: calc(100% - 36px); min-height: 44px; align-items: center; justify-self: center; gap: 7px; margin: auto; border: 1px solid var(--glass-edge); border-radius: 999px; padding: 0 15px; color: var(--apple-label); background: var(--glass-fill-strong); box-shadow: 0 14px 40px rgba(0,0,0,.42); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); font-size: .68rem; font-weight: 650; }
@@ -448,7 +534,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 .apple-login input { width: 100%; height: 50px; border: 1px solid rgba(255,255,255,.08); border-radius: var(--control-radius); padding: 0 14px; outline: 0; color: #fff; background: var(--apple-surface); font-size: .86rem; }
 .apple-login input:focus { border-color: var(--apple-blue); }
 .apple-login .masked-login-input { -webkit-text-security: disc; }
-.apple-login form > button { display: flex; width: 100%; height: 52px; align-items: center; justify-content: space-between; margin-top: 13px; border: 0; border-radius: var(--control-radius); padding: 0 15px 0 17px; color: #fff; background: var(--apple-blue); font-size: .86rem; font-weight: 700; box-shadow: 0 12px 30px rgba(10,132,255,.24); }
+.apple-login form > button { display: flex; width: 100%; height: 52px; align-items: center; justify-content: center; margin-top: 13px; border: 0; border-radius: var(--control-radius); padding: 0 17px; color: #fff; background: var(--apple-blue); font-size: .86rem; font-weight: 700; text-align: center; box-shadow: 0 12px 30px rgba(10,132,255,.24); }
 .privacy-note { display: flex; align-items: flex-start; gap: 7px; margin: 18px 2px 0; color: var(--apple-secondary); font-size: .65rem; line-height: 1.45; }
 .privacy-note svg { flex: none; color: var(--apple-green); }
 
@@ -510,6 +596,8 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 :root[data-theme="light"] .finance-trip-list,
 :root[data-theme="light"] .finance-metrics > div,
 :root[data-theme="light"] .reservation-car,
+:root[data-theme="light"] .reservation-overview,
+:root[data-theme="light"] .cancel-confirmation,
 :root[data-theme="light"] .rental-controls,
 :root[data-theme="light"] .checkout-receipt,
 :root[data-theme="light"] .pickup-instructions,
@@ -521,7 +609,11 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 :root[data-theme="light"] .language-switch { border-color: rgba(60,60,67,.16); background: rgba(118,118,128,.12); }
 :root[data-theme="light"] .language-switch button.active { color: #fff; }
 :root[data-theme="light"] .trip-detail-header { background: linear-gradient(180deg, #f2f2f7 0%, rgba(242,242,247,.94) 56%, rgba(242,242,247,0) 100%); }
-:root[data-theme="light"] .trip-detail-header > button { box-shadow: 0 7px 18px rgba(60,60,67,.16), inset 0 1px 0 #fff; }
+:root[data-theme="light"] .trip-detail-header > button:not(.header-text-action) { box-shadow: 0 7px 18px rgba(60,60,67,.16), inset 0 1px 0 #fff; }
+:root[data-theme="light"] .reservation-detail .trip-detail-header > button:not(.header-text-action) { background: transparent; box-shadow: none; }
+:root[data-theme="light"] .reservation-detail .reservation-overview,
+:root[data-theme="light"] .reservation-detail .pickup-instructions,
+:root[data-theme="light"] .reservation-detail .receipt-list { border-color: transparent; box-shadow: none; }
 :root[data-theme="light"] .finance-hero { color: #fff; }
 :root[data-theme="light"] .apple-tabbar { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,255,255,.48) 46%), rgba(255,255,255,.72); box-shadow: 0 20px 48px rgba(60,60,67,.2), 0 4px 12px rgba(60,60,67,.12), inset 0 1px 0 #fff; }
 :root[data-theme="light"] .apple-tabbar::before { background: radial-gradient(ellipse at 18% -12%, rgba(255,255,255,.96), transparent 38%), radial-gradient(ellipse at 82% 112%, rgba(0,122,255,.12), transparent 38%); }
@@ -541,9 +633,11 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   :root[data-theme="light"] .app-toast { background: #fff; }
 }
 :root[data-theme="light"] .reservation-header > button,
-:root[data-theme="light"] .feature-sheet-header > button,
+:root[data-theme="light"] .feature-sheet-header > button { border-color: rgba(60,60,67,.14); background: rgba(118,118,128,.1); }
 :root[data-theme="light"] .pickup-control > button,
-:root[data-theme="light"] .duration-control > div { border-color: rgba(60,60,67,.14); background: rgba(118,118,128,.1); }
+:root[data-theme="light"] .duration-control > div { border-color: transparent; background: transparent; }
+:root[data-theme="light"] .ios-date-wheel { background: rgba(242,242,247,.96); box-shadow: 0 18px 48px rgba(60,60,67,.24); }
+:root[data-theme="light"] .ios-date-wheel::before { background: rgba(118,118,128,.14); }
 :root[data-theme="light"] .filter-chip-rail button,
 :root[data-theme="light"] .choice-grid button,
 :root[data-theme="light"] .brand-picker,
@@ -563,18 +657,274 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
 :root[data-theme="light"] .apple-login input { border-color: rgba(60,60,67,.14); }
 :root[data-theme="light"] .apple-login form > button { color: #fff; }
 
+@media (max-width: 720px), (hover: none) {
+  .apple-app .tab-stage { will-change: auto; }
+  .vehicle-card { contain-intrinsic-size: 154px; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+  .vehicle-photo img { transform: translateZ(0); backface-visibility: hidden; }
+  .apple-search,
+  .filter-button,
+  .apple-filters button,
+  .apple-tabbar,
+  .apple-tabbar .tab-selection,
+  .detail-action,
+  .detail-glass-button,
+  .reservation-overlay,
+  .reservation-sheet,
+  .feature-sheet,
+  .ios-date-wheel,
+  .brand-picker-menu,
+  .confirm-reservation,
+  .app-toast { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .apple-tabbar { background: rgba(28,28,32,.94); box-shadow: 0 12px 34px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.14); }
+  .apple-search, .filter-button, .apple-filters button { background-color: rgba(28,28,31,.94); }
+  .reservation-overlay { background: rgba(0,0,0,.55); }
+  .detail-action { background-color: rgba(24,24,27,.96); }
+  .ios-date-wheel { background: #1c1c1e; }
+  :root[data-theme="light"] .apple-tabbar,
+  :root[data-theme="light"] .apple-search,
+  :root[data-theme="light"] .filter-button,
+  :root[data-theme="light"] .apple-filters button,
+  :root[data-theme="light"] .detail-action,
+  :root[data-theme="light"] .ios-date-wheel { background-color: rgba(248,248,250,.96); }
+}
+
 @media (min-width: 600px) {
   .vehicle-list { display: block; }
   .vehicle-set { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .vehicle-card { grid-template-columns: 42% 1fr; }
   .secondary-content { max-width: 600px; }
 }
-@media (min-width: 721px) {
+@media (min-width: 721px) and (max-width: 1023px) {
   body { display: grid; place-items: center; background: #08080a; }
   .apple-app.app-shell { height: calc(100dvh - 40px); border: 1px solid rgba(255,255,255,.09); border-radius: 32px; box-shadow: 0 40px 120px #000; }
   .apple-tabbar { bottom: 32px; }
   .apple-detail.car-detail { border-radius: 32px; }
   .detail-action { bottom: 34px; }
+}
+
+/* Desktop workspace — a wide, persistent-navigation layout rather than a scaled phone. */
+@media (min-width: 1024px) {
+  body { display: block; min-width: 1024px; background: var(--apple-bg); }
+  .apple-app.app-shell { width: 100%; height: 100dvh; max-width: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+
+  .apple-app .tab-stage { right: 0; left: 124px; width: auto; }
+  .explore-page, .secondary-page { padding: 38px clamp(34px, 4vw, 72px) 64px; background: radial-gradient(circle at 95% -8%, rgba(10,132,255,.13), transparent 34%), var(--apple-bg); }
+  .explore-page { scrollbar-width: thin; scrollbar-color: rgba(118,118,128,.45) transparent; }
+  .explore-page::-webkit-scrollbar, .secondary-page::-webkit-scrollbar { display: block; width: 8px; }
+  .explore-page::-webkit-scrollbar-thumb, .secondary-page::-webkit-scrollbar-thumb { border-radius: 99px; background: rgba(118,118,128,.42); }
+
+  .apple-header { max-width: 1480px; justify-content: flex-end; margin: 0 auto; }
+  .apple-header .apple-brand { display: none; }
+  .explore-notifications { width: 42px; height: 42px; margin-left: auto; border: 1px solid rgba(255,255,255,.09); background: var(--apple-surface); }
+  .title-block { max-width: 1480px; margin: 3.25rem auto 1.75rem; }
+  .title-block h1, .secondary-header h1 { font-size: clamp(2.7rem, 4.1vw, 4.6rem); letter-spacing: -.055em; }
+  .title-block p { font-size: 1rem; }
+  .location-label { font-size: .86rem; }
+
+  .search-row { position: relative; top: auto; max-width: 1480px; grid-template-columns: minmax(340px, 720px) 52px; margin: 0 auto; padding: 0; }
+  .search-row::before { display: none; }
+  .apple-search { height: 52px; }
+  .filter-button { width: 52px; height: 52px; }
+  .apple-filters { max-width: 1480px; margin: 12px auto 0; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
+  .apple-filters button { min-width: 104px; min-height: 42px; flex: 0 0 auto; padding-inline: 20px; font-size: .8rem; cursor: pointer; }
+  .section-heading { max-width: 1480px; margin: 2.5rem auto .8rem; }
+  .section-heading h2 { font-size: 1.35rem; }
+  .vehicle-list { max-width: 1480px; margin: 0 auto; }
+  .vehicle-set { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .vehicle-card { min-height: 258px; grid-template-columns: 1fr; grid-template-rows: 158px minmax(100px, 1fr); border-radius: 24px; box-shadow: 0 12px 30px rgba(0,0,0,.24); transition: border-color .2s ease, box-shadow .24s ease, transform .2s ease; }
+  .vehicle-card:hover { border-color: rgba(255,255,255,.15); box-shadow: 0 18px 42px rgba(0,0,0,.34); transform: translateY(-2px); }
+  .vehicle-photo > img { padding: 14px; }
+  .brand-badge { top: 12px; right: 12px; width: 38px; height: 38px; }
+  .brand-badge img { width: 25px; height: 25px; }
+  .vehicle-copy { padding: 15px 17px 16px; }
+  .vehicle-copy h3 { font-size: 1.08rem; }
+  .vehicle-copy > p { font-size: .72rem; }
+  .vehicle-topline > span { font-size: .66rem; }
+  .vehicle-footer strong { font-size: 1.15rem; }
+
+  .apple-tabbar { position: fixed; top: 18px; bottom: 18px; left: 18px; width: 88px; height: calc(100dvh - 36px); grid-template-columns: 1fr; grid-template-rows: auto repeat(4, 64px) 1fr; align-content: start; gap: 8px; transform: none; overflow: visible; border: 1px solid rgba(255,255,255,.11); border-radius: 27px; padding: 18px 10px; background: linear-gradient(155deg, rgba(255,255,255,.08), transparent 34%), rgba(22,22,26,.82); box-shadow: 0 24px 70px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.13); opacity: 1; backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); }
+  .apple-tabbar::before, .apple-tabbar::after { display: none; }
+  .desktop-nav-brand { display: grid; height: 48px; place-items: center; margin: 0 0 24px; }
+  .desktop-nav-brand > span { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.13); border-radius: 13px; background: #000; box-shadow: 0 8px 22px rgba(0,0,0,.3); }
+  .desktop-nav-brand img { width: 23px; height: 23px; }
+  .desktop-nav-brand strong, .desktop-nav-label { display: none; }
+  .apple-tabbar button { width: 100%; height: 64px; min-height: 64px; flex-direction: column; justify-content: center; gap: 3px; border-radius: 18px; padding: 0; cursor: pointer; }
+  .apple-tabbar button:hover { color: var(--apple-label); background: rgba(255,255,255,.05); }
+  .apple-tabbar .tab-selection { inset: 0; border-color: rgba(10,132,255,.28); border-radius: 18px; background: radial-gradient(circle at 50% 0, rgba(10,132,255,.28), transparent 70%), rgba(10,132,255,.12); box-shadow: inset 0 0 0 1px rgba(10,132,255,.08); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .apple-tabbar .tab-icon { width: 24px; height: 24px; }
+  .apple-tabbar small { font-size: .6rem; font-weight: 650; line-height: 1; }
+  .apple-tabbar.covered { opacity: 1; pointer-events: auto; }
+  .apple-tabbar.covered button { pointer-events: none; }
+
+  .secondary-header, .secondary-content { width: min(100%, 1040px); max-width: 1040px; margin-right: auto; margin-left: auto; }
+  .secondary-header { align-items: center; margin-bottom: 2.25rem; }
+  .secondary-content { gap: 16px; }
+  .secondary-content .vehicle-list { max-width: none; }
+  .secondary-content .vehicle-set { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-intro { max-width: 42rem; font-size: .96rem; }
+  .activity-card { min-height: 190px; padding: 30px; }
+  .grouped-list, .profile-card { border-radius: 22px; }
+
+  .secondary-page-account .secondary-header, .secondary-page-account .secondary-content { width: min(100%, 760px); max-width: 760px; }
+  .secondary-page-account .secondary-content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; align-items: start; gap: 14px; }
+  .secondary-page-account .profile-card { grid-column: 1; grid-row: auto; min-height: 112px; align-items: center; flex-direction: row; padding: 22px; }
+  .secondary-page-account .profile-card > svg { position: static; margin-left: auto; }
+  .secondary-page-account .profile-card-button { position: relative; }
+  .secondary-page-account .large-avatar { width: 64px; height: 64px; font-size: 1.5rem; }
+  .secondary-page-account .profile-card > div:nth-child(2) { width: auto; }
+  .secondary-page-account .profile-card strong { font-size: 1.05rem; }
+  .secondary-page-account .profile-card span { font-size: .76rem; }
+  .secondary-page-account .section-heading { grid-column: 1; grid-row: auto; width: 100%; max-width: none; min-height: 36px; margin: 10px 0 0; }
+  .secondary-page-account .settings-list { grid-column: 1; grid-row: auto; }
+  .secondary-page-account .settings-list > button, .secondary-page-account .language-setting { min-height: 72px; padding-inline: 18px; }
+  .secondary-page-account .apple-signout { grid-column: 1; grid-row: auto; min-height: 52px; margin: 2px 0 0; border: 1px solid rgba(255,69,58,.18); border-radius: 16px; }
+
+  .apple-detail.car-detail { right: 0; left: 124px; width: auto; border-radius: 0; }
+  .car-detail-scroll { display: grid; grid-template-columns: minmax(440px, 45%) minmax(0, 1fr); padding: 0; }
+  .apple-detail .detail-hero { position: sticky; top: 0; height: 100dvh; min-height: 0; }
+  .apple-detail .detail-hero > img { padding: 56px 32px 120px; }
+  .apple-detail .detail-content { min-height: 100dvh; margin: 0; border-radius: 0; padding: 64px clamp(34px, 4vw, 72px) 140px; }
+  .apple-detail .detail-action { right: clamp(34px, 4vw, 72px); bottom: 28px; left: calc(45% + clamp(34px, 4vw, 72px)); }
+
+  .reservation-overlay, .feature-overlay { left: 124px; align-items: center; padding: 32px; }
+  .reservation-sheet, .feature-sheet { max-height: min(820px, calc(100dvh - 64px)); transform-origin: center; }
+  .trip-overlay { padding: 34px clamp(34px, 5vw, 80px) 60px; }
+  .trip-detail-header { top: -34px; margin: -34px calc(-1 * clamp(34px, 5vw, 80px)) 24px; padding: 34px clamp(34px, 5vw, 80px) 12px; }
+
+  /* Secondary pages become desktop workspaces rather than tall phone stacks. */
+  .secondary-page-trips .secondary-header, .secondary-page-trips .secondary-content,
+  .secondary-page-saved .secondary-header, .secondary-page-saved .secondary-content { width: min(100%, 1180px); max-width: 1180px; }
+  .secondary-page-trips .secondary-content { grid-template-columns: minmax(0, 1.12fr) minmax(340px, .88fr); align-items: stretch; gap: 18px; }
+  .secondary-page-trips .upcoming-heading { grid-column: 1 / -1; width: 100%; max-width: none; margin: 0 0 -5px; }
+  .secondary-page-trips .upcoming-reservation { grid-column: 1; min-height: 190px; grid-template-columns: 210px minmax(0,1fr) 24px; border-radius: 24px; }
+  .secondary-page-trips .upcoming-car-image img { width: 210px; padding: 18px; }
+  .secondary-page-trips .upcoming-reservation strong { font-size: 1.12rem; }
+  .secondary-page-trips .upcoming-reservation span { font-size: .68rem; }
+  .secondary-page-trips .upcoming-reservation small, .secondary-page-trips .upcoming-reservation p { font-size: .72rem; }
+  .secondary-page-trips .activity-card { grid-column: 2; min-height: 190px; margin-top: 0; }
+  .secondary-page-trips .section-heading:not(.upcoming-heading), .secondary-page-trips .grouped-list { grid-column: 1 / -1; width: 100%; max-width: none; }
+  .secondary-page-trips .section-heading:not(.upcoming-heading) { margin: 18px 0 -4px; }
+  .secondary-page-trips .grouped-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .secondary-page-trips .trip-row { min-height: 82px; border-bottom: 0; }
+  .secondary-page-trips .trip-row + .trip-row { border-left: .5px solid var(--apple-separator); }
+  .secondary-page-trips .secondary-content:not(:has(.upcoming-reservation)) .activity-card { grid-column: 1 / -1; }
+
+  .secondary-page-saved .secondary-content { gap: 22px; }
+  .secondary-page-saved .page-intro { margin: -.8rem 0 0; }
+  .secondary-page-saved .saved-vehicle-set { grid-template-columns: repeat(auto-fit, minmax(300px, 360px)); justify-content: start; gap: 20px; }
+  .secondary-page-saved .vehicle-card { min-height: 300px; grid-template-rows: 184px minmax(110px,1fr); }
+
+  /* Desktop detail headers use a conventional left-aligned toolbar. */
+  .trip-detail-header, .reservation-detail .trip-detail-header, .active-rental-page .trip-detail-header { position: relative; top: auto; width: min(100%, 1180px); min-height: 58px; grid-template-columns: 44px minmax(0,1fr) auto; gap: 14px; margin: 0 auto 26px; padding: 0; background: transparent; }
+  .trip-detail-header > div { text-align: left; }
+  .trip-detail-header h2 { font-size: 1.12rem; }
+  .trip-detail-header span { font-size: .68rem; }
+  .trip-detail-header > button:not(.header-text-action), .reservation-detail .trip-detail-header > button:not(.header-text-action), .active-rental-page .trip-detail-header > button { border: 1px solid rgba(255,255,255,.1); border-radius: 13px; background: var(--apple-surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .trip-overlay-content { width: min(100%, 1080px); max-width: 1080px; margin: 0 auto; }
+
+  .trip-detail-page .trip-overlay-content { grid-template-columns: minmax(340px,.75fr) minmax(430px,1.25fr); align-items: start; gap: 18px 24px; }
+  .trip-detail-page .trip-total { grid-column: 1; grid-row: 1; min-height: 210px; align-content: center; border-radius: 24px; background: var(--apple-surface); }
+  .trip-detail-page .trip-metrics { grid-column: 1; grid-row: 2; }
+  .trip-detail-page .trip-metrics > div { min-height: 96px; }
+  .trip-detail-page .detail-block:nth-of-type(2) { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+  .trip-detail-page .detail-block:nth-of-type(2) .route-timeline > div { min-height: 110px; align-content: center; }
+  .trip-detail-page .detail-block:nth-of-type(3) { grid-column: 1 / -1; }
+  .trip-detail-page .trip-support { grid-column: 1 / -1; }
+
+  .finance-detail-page .finance-content { grid-template-columns: minmax(390px,.9fr) minmax(440px,1.1fr); align-items: start; gap: 20px 24px; }
+  .finance-detail-page .finance-hero { grid-column: 1; grid-row: 1 / span 2; min-height: 286px; align-content: center; padding: 34px; }
+  .finance-detail-page .finance-metrics { grid-column: 2; grid-row: 1; }
+  .finance-detail-page .finance-metrics > div { min-height: 126px; padding: 18px; }
+  .finance-detail-page .detail-block:nth-of-type(2) { grid-column: 2; grid-row: 2; margin-top: 0; }
+  .finance-detail-page .detail-block:nth-of-type(3) { grid-column: 1 / -1; }
+
+  .reservation-detail .trip-overlay-content { width: min(100%, 1080px); max-width: 1080px; grid-template-columns: minmax(420px,1fr) minmax(420px,1fr); grid-template-rows: auto auto; align-items: start; gap: 20px 24px; padding-bottom: 24px; }
+  .reservation-detail .reservation-overview { grid-column: 1; grid-row: 1 / span 2; min-height: 100%; border: 1px solid rgba(255,255,255,.07); }
+  .reservation-detail .reservation-overview-dates h2 { font-size: 1.55rem; }
+  .reservation-detail .reservation-overview-car { min-height: 154px; grid-template-columns: 170px minmax(0,1fr); }
+  .reservation-detail .reservation-overview-car > img { width: 170px; height: 126px; }
+  .reservation-detail .detail-block:nth-of-type(2) { grid-column: 2; grid-row: 1; }
+  .reservation-detail .detail-block:nth-of-type(3) { grid-column: 2; grid-row: 2; }
+  .reservation-action-bar { max-width: 1080px; grid-template-columns: 1fr 280px; }
+  .reservation-action-bar .lifecycle-action { grid-column: 2; border-radius: 14px; }
+
+  .active-rental-content { width: min(100%, 1120px); max-width: 1120px; grid-template-columns: minmax(500px,1.18fr) minmax(360px,.82fr); grid-template-rows: auto auto auto auto; align-content: start; gap: 18px 22px; overflow: visible; }
+  .active-drive-card { grid-column: 1; grid-row: 1 / span 2; min-height: 380px; }
+  .active-drive-card > img { right: -2%; bottom: 52px; width: 74%; height: 230px; }
+  .active-drive-copy { right: 28px; bottom: 26px; left: 28px; }
+  .active-drive-copy h1 { font-size: 2rem; }
+  .active-time-card { grid-column: 2; grid-row: 1; }
+  .active-time-card > div { min-height: 106px; padding: 20px; }
+  .active-control-section { grid-column: 2; grid-row: 2; }
+  .active-control-grid button { min-height: 116px; border-radius: 22px; cursor: pointer; }
+  .active-return-card { grid-column: 1 / -1; grid-row: 3; min-height: 112px; padding: 18px 22px; }
+  .active-safety-note { grid-column: 1 / -1; grid-row: 4; }
+  .active-rental-footer { width: min(100%, 1120px); max-width: 1120px; display: flex; justify-content: flex-end; }
+  .active-rental-footer .primary-action { width: 280px; border-radius: 14px; }
+
+  /* Desktop dialogs replace draggable phone sheets. */
+  .sheet-grabber-zone { display: none; }
+  .reservation-sheet, .feature-sheet { border-radius: 22px; padding: 24px; }
+  .feature-sheet-header, .reservation-header { min-height: 52px; }
+  .feature-sheet-header h2, .reservation-header h2 { font-size: 1.45rem; }
+  .feature-sheet-header > button, .reservation-header > button { border-radius: 12px; }
+  .primary-action, .secondary-action, .confirm-reservation, .inline-reset-action, .cancel-edit-reservation { border-radius: 13px; }
+  .filter-overlay { background: rgba(0,0,0,.38); }
+  .filter-sheet { width: min(100%, 760px); max-width: 760px; height: min(610px, calc(100dvh - 64px)); }
+  .filter-sheet .feature-sheet-scroll { padding: 10px 2px 12px; }
+  .filter-sheet .filter-focus-stage:not(.brand-focused) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-content: start; gap: 6px 24px; }
+  .filter-sheet .price-filter { grid-column: 1; }
+  .filter-sheet .brand-filter { grid-column: 2; }
+  .filter-sheet .filter-tail { grid-column: 1 / -1; }
+  .filter-sheet .choice-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .filter-sheet .inline-reset-action { width: 160px; justify-self: start; }
+  .filter-sheet .feature-sheet-actions { grid-template-columns: 190px; justify-content: end; }
+  .filter-sheet .brand-filter.focused { grid-column: 1 / -1; }
+
+  .account-sheet { width: min(100%, 700px); max-width: 700px; }
+  .account-form { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 16px; padding-top: 20px; }
+  .account-form > label:first-of-type, .account-form > .mock-data-banner, .account-form > .primary-action, .account-form > .verification-toggle { grid-column: 1 / -1; }
+  .account-form input:not([type="checkbox"]) { border-radius: 12px; }
+  .account-form > .primary-action { width: 190px; justify-self: end; margin-top: 12px; }
+  .verification-toggle { border-radius: 12px; }
+  .feature-overlay:has(.notifications-sheet) { align-items: start; justify-items: end; padding: 28px 34px; }
+  .notifications-sheet { width: min(100%, 480px); max-width: 480px; justify-self: end; }
+  .notification-list { border-radius: 14px; }
+  .notification-center article { min-height: 78px; }
+
+  .reservation-sheet { width: min(100%, 820px); max-width: 820px; }
+  .reservation-sheet.step-rental, .reservation-sheet.step-rental.editing-reservation { height: min(610px, calc(100dvh - 64px)); }
+  .reservation-sheet.step-payment { height: min(590px, calc(100dvh - 64px)); }
+  .reservation-header > div { text-align: left; }
+  .step-rental .reservation-step-content:not(.date-focused) { display: grid; grid-template-columns: 270px minmax(0,1fr); align-items: stretch; gap: 22px; }
+  .step-rental .reservation-step-content:not(.date-focused) .reservation-car { min-height: 274px; grid-template-columns: 1fr; grid-template-rows: 170px auto; align-content: start; margin: 14px 0 0; }
+  .step-rental .reservation-step-content:not(.date-focused) .reservation-car img { width: 100%; height: 170px; padding: 16px; }
+  .step-rental .reservation-step-content:not(.date-focused) .reservation-car > div { padding: 16px; }
+  .step-rental .rental-date-section { margin-top: 14px; }
+  .step-rental .reservation-step-content.date-focused .rental-date-section { width: 100%; max-width: 620px; margin: 14px auto 0; }
+  .step-payment .reservation-step-content { display: grid; grid-template-columns: 270px minmax(0,1fr); align-items: start; gap: 8px 22px; }
+  .step-payment .reservation-car { grid-column: 1; grid-row: 1 / span 2; min-height: 290px; grid-template-columns: 1fr; grid-template-rows: 178px auto; }
+  .step-payment .reservation-car img { width: 100%; height: 178px; padding: 16px; }
+  .step-payment .reservation-car > div { padding: 16px; }
+  .step-payment .checkout-section { grid-column: 2; }
+  .step-rental .reservation-checkout-actions { grid-template-columns: minmax(0,1fr) 230px; align-items: end; gap: 16px; }
+  .step-rental .rental-live-total { min-height: 76px; margin: 7px 0 0; }
+  .step-rental .confirm-reservation { width: 100%; margin: 12px 0 0; }
+  .step-payment .reservation-checkout-actions { grid-template-columns: 230px; justify-content: end; }
+  .step-payment .confirm-reservation { width: 100%; margin: 12px 0 0; }
+
+  .apple-login-card { display: grid; width: min(100%, 920px); grid-template-columns: minmax(300px,.85fr) minmax(380px,1.15fr); grid-template-rows: auto auto auto; gap: 0 70px; border: 1px solid rgba(255,255,255,.08); border-radius: 28px; padding: 52px; background: rgba(28,28,30,.72); box-shadow: 0 30px 100px rgba(0,0,0,.42); }
+  .apple-login .login-symbol { grid-column: 1; grid-row: 1; }
+  .apple-login .login-copy { grid-column: 1; grid-row: 2; align-self: start; }
+  .apple-login .login-copy h1 { font-size: 3.2rem; }
+  .apple-login form { grid-column: 2; grid-row: 1 / span 2; align-content: center; }
+  .apple-login input, .apple-login form > button { border-radius: 13px; }
+  .apple-login .privacy-note { grid-column: 2; grid-row: 3; }
+}
+
+@media (min-width: 1440px) {
+  .vehicle-set { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .secondary-content .vehicle-set { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -588,11 +938,12 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   .filter-button,
   .explore-notifications,
   .trip-detail-header,
-  .trip-detail-header > button,
+  .trip-detail-header > button:not(.header-text-action),
   .detail-action,
   .detail-glass-button,
   .reservation-overlay,
   .ios-date-menu,
+  .ios-date-wheel,
   .brand-picker-menu { background: #1c1c1e !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .apple-tabbar::before, .apple-tabbar::after { display: none; }
   .confirm-reservation,
@@ -606,7 +957,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   .apple-filters button,
   .apple-search,
   .filter-button,
-  .trip-detail-header > button,
+  .trip-detail-header > button:not(.header-text-action),
   .detail-action,
   .detail-glass-button,
   .reservation-sheet,
@@ -619,7 +970,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   .price-slider-wrap,
   .inline-reset-action,
   .upcoming-reservation,
-  .reservation-status,
+  .reservation-overview,
   .pickup-instructions,
   .language-switch { border-color: rgba(255,255,255,.48); }
   .apple-tabbar { background: #111; }
@@ -632,10 +983,11 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   :root[data-theme="light"] .apple-search,
   :root[data-theme="light"] .filter-button,
   :root[data-theme="light"] .trip-detail-header,
-  :root[data-theme="light"] .trip-detail-header > button,
+  :root[data-theme="light"] .trip-detail-header > button:not(.header-text-action),
   :root[data-theme="light"] .detail-action,
   :root[data-theme="light"] .detail-glass-button,
   :root[data-theme="light"] .ios-date-menu,
+  :root[data-theme="light"] .ios-date-wheel,
   :root[data-theme="light"] .brand-picker-menu { background: #fff !important; }
   :root[data-theme="light"] .reservation-overlay { background: rgba(60,60,67,.34) !important; }
 }
@@ -647,7 +999,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   :root[data-theme="light"] .apple-filters button,
   :root[data-theme="light"] .apple-search,
   :root[data-theme="light"] .filter-button,
-  :root[data-theme="light"] .trip-detail-header > button,
+  :root[data-theme="light"] .trip-detail-header > button:not(.header-text-action),
   :root[data-theme="light"] .detail-action,
   :root[data-theme="light"] .detail-glass-button,
   :root[data-theme="light"] .reservation-sheet,
@@ -656,7 +1008,7 @@ button:focus-visible, [role="button"]:focus-visible, input:focus-visible { outli
   :root[data-theme="light"] .rental-controls,
   :root[data-theme="light"] .ios-date-menu,
   :root[data-theme="light"] .upcoming-reservation,
-  :root[data-theme="light"] .reservation-status,
+  :root[data-theme="light"] .reservation-overview,
   :root[data-theme="light"] .pickup-instructions,
   :root[data-theme="light"] .language-switch { border-color: rgba(0,0,0,.48); }
   :root[data-theme="light"] .apple-tabbar { background: #fff; }

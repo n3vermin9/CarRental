@@ -1,11 +1,11 @@
 'use client';
 
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { type CSSProperties, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, type PanInfo, useDragControls, useReducedMotion } from 'framer-motion';
 import {
   IconAdjustmentsHorizontal, IconArrowLeft, IconBattery, IconBell, IconBolt, IconCar,
   IconCheck, IconChevronDown, IconChevronRight, IconClock, IconCreditCard, IconGauge, IconHeart, IconId,
-  IconHome, IconLanguage, IconLogout, IconMapPin, IconMoon, IconNavigation, IconPlus, IconRoute, IconSearch, IconSun,
+  IconBulb, IconHome, IconLanguage, IconLock, IconLockOpen, IconLogout, IconMapPin, IconMoon, IconNavigation, IconPhone, IconRoute, IconSearch, IconSun,
   IconShieldCheck, IconUser, IconUsers, IconX,
 } from '@tabler/icons-react';
 import { carTypeLabel, dayCount, getCopy, Locale, minuteCount, tripCount, tripDate, tripPlace } from './i18n';
@@ -15,7 +15,7 @@ type Theme = 'dark' | 'light';
 type BookingStatus = 'confirmed' | 'ready' | 'active' | 'completed';
 type Car = { id: number; name: string; type: string; electric: boolean; plate: string; range: number; price: number; walk: number; image: string };
 type Trip = { id: number; car: string; date: string; time: string; endDate: string; endTime: string; days: number; distance: number; from: string; to: string; price: number; rentalFee: number; extras: number };
-type Reservation = { carId: number; startDate: string; days: number; total: number; confirmation: string; status: BookingStatus };
+type Reservation = { carId: number; startDate: string; pickupTime: string; days: number; total: number; bookedOn: string; confirmation: string; status: BookingStatus };
 type FleetFilters = { maxPrice: number | null; brand: string; carClass: string };
 type NoticeKind = 'pickup' | 'return' | 'extension';
 type AppNotice = { id: string; kind: NoticeKind; createdAt: string; read: boolean };
@@ -25,26 +25,26 @@ type LicenceData = { number: string; expiry: string; verified: boolean };
 type AccountSheetKind = 'profile' | 'payment' | 'licence' | 'notifications';
 
 const cars: Car[] = [
-  { id: 1, name: 'Toyota Camry', type: 'Comfort', electric: false, plate: 'T704AM', range: 610, price: 4900, walk: 2, image: 'https://cdn.rotorint.com/Camry/2025_11_Nov/e/hero/png/lo/2704x1520/CAM_SPN_010040FA202V03600B0_compcrop_004.png' },
-  { id: 2, name: 'Mercedes-Benz G-Class', type: 'Business', electric: false, plate: 'M777MM', range: 620, price: 18900, walk: 4, image: 'https://cdn.apiweb.rolf.ru/storage/uploads/models/120-mercedes-benz/6859-g-klass-amg/0797aee700c6185496c0f534d8b7e388.png' },
-  { id: 3, name: 'BMW 5 Series', type: 'Business', electric: false, plate: 'B505MP', range: 680, price: 8900, walk: 5, image: 'https://thacoautotphcm.vn/storage/bmw/hinh-dai-dien/bmw-5-series.webp' },
-  { id: 4, name: 'Haval Jolion', type: 'Comfort', electric: false, plate: 'P605YT', range: 530, price: 4600, walk: 6, image: 'https://ac-garantauto.ru/storage/car/haval/jolion/colors/GAH1khoY9018H9IdzaJRUYUhf5Gzzphw.png' },
-  { id: 5, name: 'Toyota RAV4', type: 'Comfort', electric: false, plate: 'K404AE', range: 590, price: 5900, walk: 7, image: 'https://pluspng.com/img-png/toyota-rav4-png-search-new-toyota-rav-4-inventory-1280.png' },
-  { id: 6, name: 'Kia Sportage', type: 'Comfort', electric: false, plate: 'E318XA', range: 570, price: 5200, walk: 8, image: 'https://e7.pngegg.com/pngimages/926/1023/png-clipart-kia-motors-kia-sportage-car-kia-picanto-kia-compact-car-driving.png' },
-  { id: 7, name: 'Hyundai Solaris', type: 'Economy', electric: false, plate: 'A227KC', range: 540, price: 3100, walk: 3, image: 'https://png.klev.club/uploads/posts/2024-05/thumbs/png-klev-club-ef01-p-solyaris-png-6.png' },
-  { id: 8, name: 'Audi Q5', type: 'Business', electric: false, plate: 'O505OO', range: 650, price: 9400, walk: 9, image: 'https://wallpapers.com/images/hd/white-audi-s-u-v-profile-view-ewx3f0qfxwkmh3x6.png' },
-  { id: 9, name: 'Chery Arrizo 8', type: 'Comfort', electric: false, plate: 'A808CA', range: 560, price: 5100, walk: 10, image: 'https://www.uservice.ru/bitrix/components/allsites/v2.instock.cars/carpics/chery/arrizo8/White.png' },
-  { id: 10, name: 'Changan X5 Plus', type: 'Comfort', electric: false, plate: 'X505BA', range: 520, price: 4700, walk: 11, image: 'https://avantaauto.ru/upload/resize_cache/iblock/aab/600_600_140cd750bba9870f18aada2478b24840a/70cca1qgjb5xf9j5ek2k5ohfysq6iavm.png' },
-  { id: 11, name: 'Toyota Land Cruiser', type: 'Business', electric: false, plate: 'T200LC', range: 760, price: 13900, walk: 12, image: 'https://www.pngfind.com/pngs/m/428-4281099_2018-toyota-land-cruiser-2019-toyota-land-cruiser.png' },
-  { id: 12, name: 'Mercedes-Benz E-Class', type: 'Business', electric: false, plate: 'E220MB', range: 690, price: 9900, walk: 13, image: 'https://img.mercedes-benz-kiev.com/data/purchase/e-class-limousine/0552620122/mercedes-benz-e-class-limousine-1.jpg' },
-  { id: 13, name: 'BMW X5', type: 'Business', electric: false, plate: 'X505BM', range: 710, price: 11900, walk: 14, image: 'https://galleriabmw.com/wp-content/uploads/sites/85/2022/03/X5.png' },
-  { id: 14, name: 'Volkswagen Tiguan', type: 'Comfort', electric: false, plate: 'T614BA', range: 630, price: 5600, walk: 5, image: 'https://cms-assets.autoscout24.com/uaddx06iwzdz/718bCkCDMUc9aVoJ5KzNzF/25fa7c3327f21fe2e48c8c8f763f09b6/seo-ca-research-Volkswagen-Tiguan-2024-1.png?w=1100' },
-  { id: 15, name: 'Haval M6', type: 'Economy', electric: false, plate: 'M606XA', range: 580, price: 3900, walk: 6, image: 'https://ac-garantauto.ru/storage/car/haval/m6/colors/VFNY1Q58DksqVxGRCBVlcXTE1IwAglwI.png' },
-  { id: 16, name: 'Geely Monjaro', type: 'Business', electric: false, plate: 'M010GE', range: 640, price: 7200, walk: 8, image: 'https://avtomir.ru/upload/uf/15e/g1nxeaxawrt99n489e31gket6h0kdpe1.png' },
-  { id: 17, name: 'Porsche Cayenne', type: 'Business', electric: false, plate: 'P911CA', range: 700, price: 16900, walk: 15, image: 'https://optim.tildacdn.pro/tild3133-6463-4563-a661-303332313764/-/resize/778x/-/format/webp/Porsche-PNG-Image-Ba.png.webp' },
-  { id: 18, name: 'Geely Coolray', type: 'Economy', electric: false, plate: 'C018GE', range: 510, price: 4200, walk: 7, image: 'https://www.sberleasing.ru/upload/dev2fun.imagecompress/webp/sbl.ilsa/d37/1t3v08jo363im5rjr03egt145nht8nn2/381f8a8accb2da9d73738e04270c828f.webp' },
-  { id: 19, name: 'Omoda C5', type: 'Comfort', electric: false, plate: 'C505OM', range: 550, price: 4800, walk: 9, image: 'https://avtomir.ru/upload/uf/e52/0uhbz5hmusio0w9znqwin2nofpxw00yh.png' },
-  { id: 20, name: 'Jetour Dashing', type: 'Comfort', electric: false, plate: 'D020JE', range: 570, price: 5000, walk: 10, image: 'https://www.major-auto.ru/images/models/jetour/dashing/30595/30595_medium.jpg' },
+  { id: 1, name: 'Toyota Camry', type: 'Comfort', electric: false, plate: 'T704AM', range: 610, price: 4900, walk: 2, image: '/cars/01-toyota-camry.webp' },
+  { id: 2, name: 'Mercedes-Benz G-Class', type: 'Business', electric: false, plate: 'M777MM', range: 620, price: 18900, walk: 4, image: '/cars/02-mercedes-benz-g-class.webp' },
+  { id: 3, name: 'BMW 5 Series', type: 'Business', electric: false, plate: 'B505MP', range: 680, price: 8900, walk: 5, image: '/cars/03-bmw-5-series.webp' },
+  { id: 4, name: 'Haval Jolion', type: 'Comfort', electric: false, plate: 'P605YT', range: 530, price: 4600, walk: 6, image: '/cars/04-haval-jolion.webp' },
+  { id: 5, name: 'Toyota RAV4', type: 'Comfort', electric: false, plate: 'K404AE', range: 590, price: 5900, walk: 7, image: '/cars/05-toyota-rav4.webp' },
+  { id: 6, name: 'Kia Sportage', type: 'Comfort', electric: false, plate: 'E318XA', range: 570, price: 5200, walk: 8, image: '/cars/06-kia-sportage.webp' },
+  { id: 7, name: 'Hyundai Solaris', type: 'Economy', electric: false, plate: 'A227KC', range: 540, price: 3100, walk: 3, image: '/cars/07-hyundai-solaris.webp' },
+  { id: 8, name: 'Audi Q5', type: 'Business', electric: false, plate: 'O505OO', range: 650, price: 9400, walk: 9, image: '/cars/08-audi-q5.webp' },
+  { id: 9, name: 'Chery Arrizo 8', type: 'Comfort', electric: false, plate: 'A808CA', range: 560, price: 5100, walk: 10, image: '/cars/09-chery-arrizo-8.webp' },
+  { id: 10, name: 'Changan X5 Plus', type: 'Comfort', electric: false, plate: 'X505BA', range: 520, price: 4700, walk: 11, image: '/cars/10-changan-x5-plus.webp' },
+  { id: 11, name: 'Toyota Land Cruiser', type: 'Business', electric: false, plate: 'T200LC', range: 760, price: 13900, walk: 12, image: '/cars/11-toyota-land-cruiser.webp' },
+  { id: 12, name: 'Mercedes-Benz E-Class', type: 'Business', electric: false, plate: 'E220MB', range: 690, price: 9900, walk: 13, image: '/cars/12-mercedes-benz-e-class.webp' },
+  { id: 13, name: 'BMW X5', type: 'Business', electric: false, plate: 'X505BM', range: 710, price: 11900, walk: 14, image: '/cars/13-bmw-x5.webp' },
+  { id: 14, name: 'Volkswagen Tiguan', type: 'Comfort', electric: false, plate: 'T614BA', range: 630, price: 5600, walk: 5, image: '/cars/14-volkswagen-tiguan.webp' },
+  { id: 15, name: 'Haval M6', type: 'Economy', electric: false, plate: 'M606XA', range: 580, price: 3900, walk: 6, image: '/cars/15-haval-m6.webp' },
+  { id: 16, name: 'Geely Monjaro', type: 'Business', electric: false, plate: 'M010GE', range: 640, price: 7200, walk: 8, image: '/cars/16-geely-monjaro.webp' },
+  { id: 17, name: 'Porsche Cayenne', type: 'Business', electric: false, plate: 'P911CA', range: 700, price: 16900, walk: 15, image: '/cars/17-porsche-cayenne.webp' },
+  { id: 18, name: 'Geely Coolray', type: 'Economy', electric: false, plate: 'C018GE', range: 510, price: 4200, walk: 7, image: '/cars/18-geely-coolray.webp' },
+  { id: 19, name: 'Omoda C5', type: 'Comfort', electric: false, plate: 'C505OM', range: 550, price: 4800, walk: 9, image: '/cars/19-omoda-c5.webp' },
+  { id: 20, name: 'Jetour Dashing', type: 'Comfort', electric: false, plate: 'D020JE', range: 570, price: 5000, walk: 10, image: '/cars/20-jetour-dashing.webp' },
 ];
 const carSearchAliases: Record<number, string> = {
   1: 'toyota camry тойота камри',
@@ -97,14 +97,14 @@ const trips: Trip[] = [
 const featureText = {
   en: {
     filters: 'Filters', reset: 'Reset', apply: 'Show cars', pickupDate: 'Pickup date', anyDate: 'Any date', maxDailyPrice: 'Maximum daily price', anyPrice: 'Any price', brand: 'Brand', anyBrand: 'Any brand', carClass: 'Car class', seats: 'Seats', anySeats: 'Any', filterResults: 'matching cars',
-    ready: 'Ready for pickup', active: 'Active rental', completedRental: 'Rental completed', confirmedStatus: 'Confirmed', preparePickup: 'Mark ready for pickup', startRental: 'Start rental', completeRental: 'Complete rental', extendRental: 'Extend by one day', remaining: 'remaining', returnBy: 'Return by', pickupLocation: 'Pickup location', returnLocation: 'Return location', mockLifecycle: 'Development controls simulate the rental lifecycle.',
-    notifications: 'Notifications', noNotifications: 'No notifications yet', pickupNotice: 'Pickup reminder', pickupNoticeBody: 'Your car is scheduled for pickup in Central Grozny.', returnNotice: 'Return reminder', returnNoticeBody: 'Your active rental is approaching its return date.', extensionNotice: 'Rental extended', extensionNoticeBody: 'One day was added and the mock total was updated.', markAllRead: 'Mark all read',
+    ready: 'Ready for pickup', active: 'Active rental', activeNow: 'Active now', completedRental: 'Rental completed', confirmedStatus: 'Confirmed', preparePickup: "I'm ready to pick up", startRental: 'Start rental', completeRental: 'End rental', extendRental: 'Extend by one day', remaining: 'remaining', returnBy: 'Return by', pickupLocation: 'Pickup location', returnLocation: 'Return location', vehicleControls: 'Vehicle controls', lockCar: 'Lock', unlockCar: 'Unlock', lights: 'Lights', support: 'Support', routeBack: 'Return route', mockLifecycle: 'Development controls simulate the rental lifecycle.',
+    notifications: 'Notifications', noNotifications: 'No notifications yet', pickupNotice: 'Pickup reminder', pickupNoticeBody: 'Your car is scheduled for pickup in Central Grozny.', returnNotice: 'Return reminder', returnNoticeBody: 'Your active rental is approaching its return date.', extensionNotice: 'Rental extended', extensionNoticeBody: 'One day was added and the mock total was updated.', markAllRead: 'Mark all read', allRead: 'All read',
     editProfile: 'Edit profile', profileDetails: 'Profile details', fullName: 'Full name', phone: 'Phone', saveChanges: 'Save changes', nameRule: 'Use 2–40 letters.', emailRule: 'Enter a valid email address.', phoneRule: 'Enter 10–15 digits.', editPayment: 'Edit payment method', cardLabel: 'Card label', lastFour: 'Mock last four digits', mockOnly: 'Mock data only. Do not enter real card information.', editLicence: 'Driving licence', licenceNumber: 'Licence number', expiry: 'Expiry', verifiedStatus: 'Verified document', close: 'Close',
   },
   ru: {
     filters: 'Фильтры', reset: 'Сбросить', apply: 'Показать авто', pickupDate: 'Дата получения', anyDate: 'Любая дата', maxDailyPrice: 'Цена за сутки до', anyPrice: 'Любая цена', brand: 'Марка', anyBrand: 'Любая марка', carClass: 'Класс автомобиля', seats: 'Места', anySeats: 'Любое', filterResults: 'подходящих авто',
-    ready: 'Готов к получению', active: 'Активная аренда', completedRental: 'Аренда завершена', confirmedStatus: 'Подтверждено', preparePickup: 'Подготовить к получению', startRental: 'Начать аренду', completeRental: 'Завершить аренду', extendRental: 'Продлить на один день', remaining: 'осталось', returnBy: 'Вернуть до', pickupLocation: 'Место получения', returnLocation: 'Место возврата', mockLifecycle: 'Элементы разработки имитируют этапы аренды.',
-    notifications: 'Уведомления', noNotifications: 'Уведомлений пока нет', pickupNotice: 'Напоминание о получении', pickupNoticeBody: 'Автомобиль ожидает получения в центре Грозного.', returnNotice: 'Напоминание о возврате', returnNoticeBody: 'Срок активной аренды приближается к завершению.', extensionNotice: 'Аренда продлена', extensionNoticeBody: 'Добавлен один день, тестовая сумма обновлена.', markAllRead: 'Прочитать все',
+    ready: 'Готов к получению', active: 'Активная аренда', activeNow: 'Аренда активна', completedRental: 'Аренда завершена', confirmedStatus: 'Подтверждено', preparePickup: 'Я готов забрать авто', startRental: 'Начать аренду', completeRental: 'Завершить аренду', extendRental: 'Продлить на один день', remaining: 'осталось', returnBy: 'Вернуть до', pickupLocation: 'Место получения', returnLocation: 'Место возврата', vehicleControls: 'Управление автомобилем', lockCar: 'Закрыть', unlockCar: 'Открыть', lights: 'Фары', support: 'Помощь', routeBack: 'Маршрут возврата', mockLifecycle: 'Элементы разработки имитируют этапы аренды.',
+    notifications: 'Уведомления', noNotifications: 'Уведомлений пока нет', pickupNotice: 'Напоминание о получении', pickupNoticeBody: 'Автомобиль ожидает получения в центре Грозного.', returnNotice: 'Напоминание о возврате', returnNoticeBody: 'Срок активной аренды приближается к завершению.', extensionNotice: 'Аренда продлена', extensionNoticeBody: 'Добавлен один день, тестовая сумма обновлена.', markAllRead: 'Прочитать все', allRead: 'Всё прочитано',
     editProfile: 'Изменить профиль', profileDetails: 'Данные профиля', fullName: 'Имя', phone: 'Телефон', saveChanges: 'Сохранить', nameRule: 'Используйте 2–40 букв.', emailRule: 'Введите корректную эл. почту.', phoneRule: 'Введите 10–15 цифр.', editPayment: 'Способ оплаты', cardLabel: 'Название карты', lastFour: 'Последние 4 тестовые цифры', mockOnly: 'Только тестовые данные. Не вводите данные реальной карты.', editLicence: 'Водительские документы', licenceNumber: 'Номер удостоверения', expiry: 'Действует до', verifiedStatus: 'Документ подтверждён', close: 'Закрыть',
   },
 } as const;
@@ -116,6 +116,73 @@ const tabs = [
 ] as const;
 const spring = { type: 'spring' as const, bounce: 0, duration: 0.38 };
 const sheetSpring = { type: 'spring' as const, stiffness: 420, damping: 38, mass: .86 };
+const tabSpring = { type: 'spring' as const, stiffness: 470, damping: 42, mass: .76 };
+const pickupWaitDailyFee = 500;
+const reservationStorageVersion = 'clean-start-v1';
+const swipeBackThreshold = 84;
+const sheetDismissThreshold = 92;
+let lastHapticAt = 0;
+
+type HapticKind = 'selection' | 'impact' | 'success';
+
+function triggerHaptic(kind: HapticKind = 'selection') {
+  if (typeof window === 'undefined') return;
+  const now = performance.now();
+  if (now - lastHapticAt < 38) return;
+  lastHapticAt = now;
+  try {
+    const bridge = (window as Window & { webkit?: { messageHandlers?: { haptic?: { postMessage: (value: HapticKind) => void } } } }).webkit?.messageHandlers?.haptic;
+    if (bridge) bridge.postMessage(kind);
+    else navigator.vibrate?.(kind === 'success' ? [10, 32, 16] : kind === 'impact' ? 14 : 7);
+  } catch { /* Haptics are an optional enhancement. */ }
+}
+
+function useHorizontalGestureLock<T extends HTMLElement>() {
+  const cleanupRef = useRef<(() => void) | null>(null);
+  const ref = useCallback((node: T | null) => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    if (!node) return;
+
+    let startX = 0;
+    let startY = 0;
+    let axis: 'x' | 'y' | null = null;
+    const reset = () => { axis = null; };
+    const handleTouchStart = (event: globalThis.TouchEvent) => {
+      if (event.touches.length !== 1) return reset();
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      axis = null;
+    };
+    const handleTouchMove = (event: globalThis.TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const deltaX = Math.abs(event.touches[0].clientX - startX);
+      const deltaY = Math.abs(event.touches[0].clientY - startY);
+      if (!axis && Math.max(deltaX, deltaY) >= 5) axis = deltaX > deltaY * 1.08 ? 'x' : 'y';
+      if (axis === 'x' && event.cancelable) event.preventDefault();
+    };
+    node.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+    node.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    node.addEventListener('touchend', reset, { passive: true, capture: true });
+    node.addEventListener('touchcancel', reset, { passive: true, capture: true });
+    cleanupRef.current = () => {
+      node.removeEventListener('touchstart', handleTouchStart, true);
+      node.removeEventListener('touchmove', handleTouchMove, true);
+      node.removeEventListener('touchend', reset, true);
+      node.removeEventListener('touchcancel', reset, true);
+    };
+  }, []);
+  useEffect(() => () => cleanupRef.current?.(), []);
+  return ref;
+}
+
+function shouldSwipeBack(info: PanInfo) {
+  return info.offset.x > swipeBackThreshold || info.velocity.x > 720;
+}
+
+function shouldDismissSheet(info: PanInfo) {
+  return info.offset.y > sheetDismissThreshold || info.velocity.y > 760;
+}
 
 function normalizeSearch(value: string) {
   return value.trim().toLocaleLowerCase().replaceAll('ё', 'е');
@@ -165,6 +232,7 @@ function sanitizeProfile(value: Partial<ProfileData>): ProfileData {
 
 export default function Home() {
   const reduceMotion = useReducedMotion();
+  const tabDragControls = useDragControls();
   const [locale, setLocale] = useState<Locale>('ru');
   const [theme, setTheme] = useState<Theme>('dark');
   const [signedIn, setSignedIn] = useState(false);
@@ -175,8 +243,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('explore');
   const [tabDirection, setTabDirection] = useState(0);
   const [detailCarId, setDetailCarId] = useState<number | null>(null);
+  const [gestureNavDelay, setGestureNavDelay] = useState(false);
+  const gestureNavTimer = useRef<number | null>(null);
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [checkoutCarId, setCheckoutCarId] = useState<number | null>(null);
+  const [reservationEditTransition, setReservationEditTransition] = useState(false);
+  const reservationEditTimer = useRef<number | null>(null);
   const [fleetFilters, setFleetFilters] = useState<FleetFilters>(emptyFleetFilters);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -184,11 +256,12 @@ export default function Home() {
   const [profile, setProfile] = useState<ProfileData>(defaultProfile);
   const [payment, setPayment] = useState<PaymentData>(defaultPayment);
   const [licence, setLicence] = useState<LicenceData>(defaultLicence);
-  const [toast, setToast] = useState<string | null>(null);
   const [secondaryOverlayOpen, setSecondaryOverlayOpen] = useState(false);
   const [reservationDetailsRequested, setReservationDetailsRequested] = useState(false);
   const [exploreScrolled, setExploreScrolled] = useState(false);
   const [savedIds, setSavedIds] = useState<number[]>([1, 2]);
+  const tabSwipeRef = useHorizontalGestureLock<HTMLDivElement>();
+  const carDetailSwipeRef = useHorizontalGestureLock<HTMLElement>();
   const copy = getCopy(locale);
 
   useEffect(() => {
@@ -207,33 +280,36 @@ export default function Home() {
         setPayment({ ...defaultPayment, ...(JSON.parse(localStorage.getItem('carshare-payment') || 'null') || {}) });
         setLicence({ ...defaultLicence, ...(JSON.parse(localStorage.getItem('carshare-licence') || 'null') || {}) });
       } catch { /* Keep safe development defaults. */ }
-      const storedReservation = localStorage.getItem('carshare-reservation');
+      const shouldClearInitialRental = localStorage.getItem('carshare-reservation-storage-version') !== reservationStorageVersion;
+      if (shouldClearInitialRental) {
+        localStorage.removeItem('carshare-reservation');
+        localStorage.removeItem('carshare-reserved-id');
+        localStorage.setItem('carshare-reservation-storage-version', reservationStorageVersion);
+      }
+      const storedReservation = shouldClearInitialRental ? null : localStorage.getItem('carshare-reservation');
       if (storedReservation) {
         try {
           const parsed = JSON.parse(storedReservation) as Reservation;
           const reservationCar = cars.find((car) => car.id === parsed.carId);
           if (reservationCar && isValidISODate(parsed.startDate) && isValidRentalDays(parsed.days)) {
-            const normalized = { ...parsed, total: reservationCar.price * parsed.days, status: isBookingStatus(parsed.status) ? parsed.status : parsed.startDate <= todayISO() ? 'ready' : 'confirmed' };
+            const bookedOn = isValidISODate(parsed.bookedOn) && parsed.bookedOn <= parsed.startDate ? parsed.bookedOn : todayISO();
+            const calculatedTotal = reservationPriceBreakdown(reservationCar, parsed.startDate, parsed.days, bookedOn).total;
+            const normalized = { ...parsed, bookedOn, pickupTime: isValidPickupTime(parsed.pickupTime) ? `${parsed.pickupTime.slice(0, 2)}:00` : '10:00', total: Number.isFinite(parsed.total) && parsed.total >= calculatedTotal ? parsed.total : calculatedTotal, status: isBookingStatus(parsed.status) ? parsed.status : parsed.startDate <= todayISO() ? 'ready' : 'confirmed' };
             setReservation(normalized);
             localStorage.setItem('carshare-reservation', JSON.stringify(normalized));
           }
           else localStorage.removeItem('carshare-reservation');
         } catch { localStorage.removeItem('carshare-reservation'); }
-      } else {
-        const legacyId = Number(localStorage.getItem('carshare-reserved-id'));
-        const legacyCar = cars.find((car) => car.id === legacyId);
-        if (legacyCar) {
-          const migrated = createReservation(legacyCar, todayISO(), 1);
-          localStorage.setItem('carshare-reservation', JSON.stringify(migrated));
-          localStorage.removeItem('carshare-reserved-id');
-          setReservation(migrated);
-        }
-      }
+      } else localStorage.removeItem('carshare-reserved-id');
     });
     return () => cancelAnimationFrame(frame);
   }, []);
   useEffect(() => { document.documentElement.lang = locale; }, [locale]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => () => {
+    if (gestureNavTimer.current !== null) window.clearTimeout(gestureNavTimer.current);
+    if (reservationEditTimer.current !== null) window.clearTimeout(reservationEditTimer.current);
+  }, []);
   const visibleCars = useMemo(() => {
     const normalized = normalizeSearch(query);
     return cars.filter((car) => {
@@ -254,9 +330,18 @@ export default function Home() {
     });
   }, [filter, fleetFilters, query]);
   const detailCar = cars.find((car) => car.id === detailCarId) ?? null;
+  const reservationCar = cars.find((car) => car.id === reservation?.carId) ?? null;
   const checkoutCar = cars.find((car) => car.id === checkoutCarId) ?? null;
+  const detailReservationIsOpen = Boolean(detailCar && reservation?.carId === detailCar.id && reservation.status !== 'completed');
   const activeFilterCount = [fleetFilters.maxPrice, fleetFilters.brand !== 'All', fleetFilters.carClass !== 'All'].filter(Boolean).length;
-  const navCovered = Boolean(detailCar || checkoutCar || showFilterSheet || showNotifications || secondaryOverlayOpen);
+  const navCovered = Boolean(detailCar || checkoutCar || showFilterSheet || showNotifications || secondaryOverlayOpen || gestureNavDelay || reservationEditTransition);
+
+  function closeDetailFromGesture() {
+    if (gestureNavTimer.current !== null) window.clearTimeout(gestureNavTimer.current);
+    setGestureNavDelay(!reduceMotion);
+    setDetailCarId(null);
+    gestureNavTimer.current = window.setTimeout(() => setGestureNavDelay(false), reduceMotion ? 0 : 360);
+  }
 
   function signIn() {
     setSignedIn(true);
@@ -268,10 +353,6 @@ export default function Home() {
   }
   function changeLocale(next: Locale) { localStorage.setItem('carshare-language', next); setLocale(next); }
   function changeTheme(next: Theme) { localStorage.setItem('carshare-theme', next); setTheme(next); }
-  function showMessage(message: string) {
-    setToast(message);
-    window.setTimeout(() => setToast((current) => current === message ? null : current), 2400);
-  }
   function addNotice(kind: NoticeKind) {
     setNotices((current) => {
       const next = [{ id: `${kind}-${Date.now()}`, kind, createdAt: new Date().toISOString(), read: false }, ...current];
@@ -285,18 +366,10 @@ export default function Home() {
   }
   function advanceReservation() {
     if (!reservation) return;
-    const nextStatus: BookingStatus = reservation.status === 'confirmed' ? 'ready' : reservation.status === 'ready' ? 'active' : reservation.status === 'active' ? 'completed' : 'completed';
+    const nextStatus: BookingStatus = reservation.status === 'confirmed' || reservation.status === 'ready' ? 'active' : 'completed';
     saveReservation({ ...reservation, status: nextStatus });
-    if (nextStatus === 'ready') addNotice('pickup');
+    triggerHaptic('success');
     if (nextStatus === 'active') addNotice('return');
-  }
-  function extendReservation() {
-    if (!reservation || reservation.status !== 'active') return;
-    const car = cars.find((item) => item.id === reservation.carId);
-    if (!car || reservation.days >= 30) return;
-    saveReservation({ ...reservation, days: reservation.days + 1, total: reservation.total + car.price });
-    addNotice('extension');
-    showMessage(featureText[locale].extensionNotice);
   }
   function saveFleetFilters(next: FleetFilters) {
     localStorage.setItem('carshare-filters', JSON.stringify(next));
@@ -318,13 +391,32 @@ export default function Home() {
     setNotices(next);
   }
   function switchTab(next: TabId) {
+    if (next === activeTab) return;
+    triggerHaptic('selection');
     setTabDirection(tabs.findIndex((tab) => tab.id === next) - tabs.findIndex((tab) => tab.id === activeTab));
     setCheckoutCarId(null); setDetailCarId(null); setSecondaryOverlayOpen(false); setActiveTab(next);
   }
+  function switchTabFromSwipe(info: PanInfo) {
+    if (navCovered) return;
+    const horizontalIntent = Math.abs(info.offset.x) >= 62 || Math.abs(info.velocity.x) >= 620;
+    if (!horizontalIntent) return;
+    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    const swipeDirection = Math.abs(info.offset.x) >= 62 ? Math.sign(info.offset.x) : Math.sign(info.velocity.x);
+    const nextIndex = Math.max(0, Math.min(tabs.length - 1, currentIndex + (swipeDirection < 0 ? 1 : -1)));
+    if (nextIndex !== currentIndex) switchTab(tabs[nextIndex].id);
+  }
   function openReservationDetails() {
     setReservationDetailsRequested(true);
-    switchTab('trips');
     setSecondaryOverlayOpen(true);
+  }
+  function openReservationEditor(id: number) {
+    if (reservationEditTimer.current !== null) window.clearTimeout(reservationEditTimer.current);
+    setReservationEditTransition(true);
+    reservationEditTimer.current = window.setTimeout(() => {
+      setCheckoutCarId(id);
+      setReservationEditTransition(false);
+      reservationEditTimer.current = null;
+    }, reduceMotion ? 0 : 260);
   }
   function openSavedCar(id: number) { setDetailCarId(id); }
   function toggleSaved(id: number) { setSavedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]); }
@@ -354,10 +446,12 @@ export default function Home() {
 
     if (next !== filter) setFilter(next);
   }
-  function confirmReservation(car: Car, startDate: string, days: number) {
+  function confirmReservation(car: Car, startDate: string, pickupTime: string, days: number) {
     if (!isValidISODate(startDate) || startDate < todayISO() || !isValidRentalDays(days)) return;
-    const next = createReservation(car, startDate, days, reservation?.carId === car.id ? reservation.confirmation : undefined);
-    saveReservation(next); setCheckoutCarId(null);
+    if (!isValidPickupTime(pickupTime)) return;
+    const editingCurrentReservation = reservation?.carId === car.id && reservation.status !== 'completed';
+    const next = createReservation(car, startDate, pickupTime, days, editingCurrentReservation ? reservation.confirmation : undefined, editingCurrentReservation ? reservation.bookedOn : undefined);
+    saveReservation(next); triggerHaptic('success'); setCheckoutCarId(null);
   }
   function cancelReservation() { localStorage.removeItem('carshare-reservation'); localStorage.removeItem('carshare-reserved-id'); setReservation(null); }
 
@@ -369,7 +463,7 @@ export default function Home() {
         <form autoComplete="off" onSubmit={(event) => { event.preventDefault(); signIn(); }}>
           <label htmlFor="dev-email">{copy.email}</label><input id="dev-email" type="text" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
           <label htmlFor="dev-access-code">{copy.password}</label><input id="dev-access-code" className="masked-login-input" type="text" defaultValue="carshare" required autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-          <motion.button type="button" onClick={signIn} whileTap={{ scale: .98 }} transition={spring}>{copy.continue} <IconChevronRight size={20} /></motion.button>
+        <motion.button type="button" onClick={signIn} whileTap={{ scale: .98 }} transition={spring}>{copy.continue}</motion.button>
         </form>
         <p className="privacy-note"><IconShieldCheck size={16} /> {copy.privacy}</p>
       </motion.section>
@@ -377,11 +471,15 @@ export default function Home() {
   );
 
   return (
-    <main className="app-shell apple-app">
-      <AnimatePresence mode="popLayout" initial={false} custom={tabDirection}>
-        <motion.div className="tab-stage" key={activeTab} custom={tabDirection}
-          initial={tabDirection === 0 ? false : reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? 22 : -22, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-          exit={reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? -22 : 22, opacity: 0 }} transition={spring}>
+    <main className="app-shell apple-app" onPointerDownCapture={(event) => { if ((event.target as HTMLElement).closest('button, input[type="range"]')) triggerHaptic('selection'); }}>
+      <AnimatePresence mode="wait" initial={false} custom={tabDirection}>
+        <motion.div ref={tabSwipeRef} className="tab-stage swipe-enabled" key={activeTab} custom={tabDirection}
+          initial={tabDirection === 0 ? false : reduceMotion ? { opacity: 0 } : { x: tabDirection > 0 ? 42 : -42, opacity: 0 }}
+          animate={reduceMotion ? { opacity: 1 } : { x: 0, opacity: 1, transition: tabSpring }}
+          exit={reduceMotion ? { opacity: 0, transition: { duration: .01 } } : { x: tabDirection > 0 ? -18 : 18, opacity: 0, transition: { duration: .08, ease: 'easeOut' } }}
+          drag={reduceMotion || navCovered ? false : 'x'} dragControls={tabDragControls} dragListener={false} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: .14, right: .14 }} dragDirectionLock
+          onPointerDown={(event) => { if (!reduceMotion && !navCovered && !(event.target as HTMLElement).closest('input, textarea, select, .apple-filters, .filter-chip-rail, .ios-wheel-column')) tabDragControls.start(event.nativeEvent); }}
+          onDragEnd={(_, info) => switchTabFromSwipe(info)}>
           {activeTab === 'explore' ? (
             <section className="explore-page" aria-labelledby="fleet-title" onScroll={(event) => {
               const scrollArea = event.currentTarget;
@@ -399,8 +497,8 @@ export default function Home() {
                   <motion.div className="vehicle-set" key={`${filter}:${query.trim().toLowerCase()}:${JSON.stringify(fleetFilters)}`}
                     initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }} transition={{ duration: reduceMotion ? .01 : .18, ease: 'easeOut' }}>
-                    {visibleCars.map((car, index) => <motion.article className="vehicle-card" key={car.id} role="button" tabIndex={0} onClick={() => setDetailCarId(car.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setDetailCarId(car.id); }} aria-label={`${copy.openDetails} ${car.name}`} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ ...spring, delay: reduceMotion ? 0 : index * .045 }} whileTap={{ scale: .985 }}>
-                      <div className="vehicle-photo"><img draggable={false} src={car.image} alt={car.name} /><span className="brand-badge" aria-hidden="true"><img draggable={false} src={carBrandLogo(car.name)} alt="" /></span></div>
+                    {visibleCars.map((car, index) => <motion.article className="vehicle-card" key={car.id} role="button" tabIndex={0} onClick={() => setDetailCarId(car.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setDetailCarId(car.id); }} aria-label={`${copy.openDetails} ${car.name}`} initial={false} whileTap={{ scale: .985 }}>
+                      <div className="vehicle-photo"><img draggable={false} width={720} height={450} loading={index < 2 ? 'eager' : 'lazy'} fetchPriority={index < 2 ? 'high' : 'low'} decoding="async" src={car.image} alt={car.name} /><span className="brand-badge" aria-hidden="true"><img draggable={false} width={22} height={22} loading="lazy" decoding="async" src={carBrandLogo(car.name)} alt="" /></span></div>
                       <div className="vehicle-copy"><div className="vehicle-topline"><span>{car.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, car.type)}</span><button className={savedIds.includes(car.id) ? 'saved' : ''} onClick={(event) => { event.stopPropagation(); toggleSaved(car.id); }} aria-label={`${savedIds.includes(car.id) ? copy.remove : copy.save} ${car.name}`}><IconHeart size={19} fill={savedIds.includes(car.id) ? 'currentColor' : 'none'} /></button></div><h3>{car.name}</h3><p>{car.plate}</p><div className="vehicle-footer"><strong>₽{car.price.toLocaleString('ru-RU')}</strong></div></div>
                     </motion.article>)}
                     {!visibleCars.length && <div className="empty-state"><IconSearch size={28} /><h3>{copy.noCars}</h3><p>{copy.tryAnother}</p></div>}
@@ -408,26 +506,35 @@ export default function Home() {
                 </AnimatePresence>
               </div>
             </section>
-          ) : <SecondaryPage activeTab={activeTab} savedIds={savedIds} signOut={signOut} openSavedCar={openSavedCar} toggleSaved={toggleSaved} reservation={reservation} reservationCar={cars.find((car) => car.id === reservation?.carId) ?? null} reservationDetailsRequested={reservationDetailsRequested} clearReservationDetailsRequest={() => setReservationDetailsRequested(false)} modifyReservation={(id) => setCheckoutCarId(id)} cancelReservation={cancelReservation} advanceReservation={advanceReservation} extendReservation={extendReservation} onOverlayVisibilityChange={setSecondaryOverlayOpen} locale={locale} changeLocale={changeLocale} theme={theme} changeTheme={changeTheme} notices={notices} markNoticesRead={markNoticesRead} profile={profile} payment={payment} licence={licence} saveProfile={saveProfile} savePayment={savePayment} saveLicence={saveLicence} />}
+          ) : <SecondaryPage activeTab={activeTab} savedIds={savedIds} signOut={signOut} openSavedCar={openSavedCar} toggleSaved={toggleSaved} reservation={reservation} reservationCar={reservationCar} modifyReservation={openReservationEditor} advanceReservation={advanceReservation} onOverlayVisibilityChange={setSecondaryOverlayOpen} locale={locale} changeLocale={changeLocale} theme={theme} changeTheme={changeTheme} notices={notices} markNoticesRead={markNoticesRead} profile={profile} payment={payment} licence={licence} saveProfile={saveProfile} savePayment={savePayment} saveLicence={saveLicence} />}
         </motion.div>
       </AnimatePresence>
-      <AnimatePresence>{detailCar && <motion.section className="car-detail apple-detail" aria-labelledby="car-detail-title" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring}>
-        <div className="detail-hero"><img draggable={false} src={detailCar.image} alt={detailCar.name} /><div className="detail-scrim" /><motion.button className="detail-glass-button detail-back" whileTap={{ scale: .9 }} onClick={() => setDetailCarId(null)} aria-label={copy.backPrevious}><IconArrowLeft size={23} /></motion.button><motion.button className={`detail-glass-button detail-save ${savedIds.includes(detailCar.id) ? 'saved' : ''}`} whileTap={{ scale: .9 }} onClick={() => toggleSaved(detailCar.id)} aria-label={`${copy.save} ${detailCar.name}`}><IconHeart size={21} fill={savedIds.includes(detailCar.id) ? 'currentColor' : 'none'} /></motion.button><div className="detail-hero-copy"><span>{detailCar.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, detailCar.type)}</span><h1 id="car-detail-title">{detailCar.name}</h1><p><IconMapPin size={14} /> {minuteCount(locale, detailCar.walk, true)} · {copy.centralGrozny}</p></div></div>
-        <div className="detail-content"><div className="detail-price"><div><span>{copy.dailyRental}</span><strong>₽{detailCar.price.toLocaleString('ru-RU')}<small>/{locale === 'ru' ? 'сутки' : 'day'}</small></strong></div><span className="detail-available"><i />{copy.availableNow}</span></div><div className="detail-metrics"><div><IconGauge size={21} /><span>{copy.range}<strong>{detailCar.range} {locale === 'ru' ? 'км' : 'km'}</strong></span></div><div><IconBattery size={21} /><span>{detailCar.electric ? copy.charge : copy.fuel}<strong>{detailCar.electric ? '82%' : '74%'}</strong></span></div><div><IconUsers size={21} /><span>{copy.seats}<strong>{carSeats(detailCar.name)} {copy.people}</strong></span></div></div><section className="detail-section"><h2>{copy.readyCity}</h2><p>{copy.readyCityDescription}</p></section><section className="detail-section"><h2>{copy.included}</h2><div className="feature-list"><span><IconShieldCheck size={19} />{copy.comprehensiveInsurance}</span><span><IconCar size={19} />{copy.fuelParking}</span><span><IconRoute size={19} />{copy.roadsideSupport}</span></div></section><section className="detail-section detail-location"><h2>{copy.pickup}</h2><div><IconMapPin size={20} /><span><strong>{copy.centralGrozny}</strong><small>{detailCar.walk} {copy.exactAfterReservation}</small></span></div></section></div>
-        <div className="detail-action"><motion.button className={`detail-reserve ${reservation?.carId === detailCar.id ? 'reserved' : ''}`} whileTap={{ scale: .98 }} transition={spring} onClick={() => reservation?.carId === detailCar.id ? openReservationDetails() : setCheckoutCarId(detailCar.id)} aria-haspopup="dialog"><span>{reservation?.carId === detailCar.id ? copy.viewReservationDetails : copy.reserveCar}</span><b>{reservation?.carId === detailCar.id ? <IconChevronRight size={18} /> : `₽${detailCar.price.toLocaleString('ru-RU')}/${locale === 'ru' ? 'сутки' : 'day'}`}</b></motion.button></div>
+      <AnimatePresence>{detailCar && <motion.section ref={carDetailSwipeRef} className="car-detail apple-detail horizontal-swipe-surface" aria-labelledby="car-detail-title" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} drag={reduceMotion ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0, right: .2 }} dragDirectionLock onDragEnd={(_, info) => { if (shouldSwipeBack(info)) closeDetailFromGesture(); }}>
+        <div className="car-detail-scroll">
+          <div className="detail-hero"><img draggable={false} src={detailCar.image} alt={detailCar.name} /><div className="detail-scrim" /><motion.button className="detail-glass-button detail-back" whileTap={{ scale: .9 }} onClick={() => setDetailCarId(null)} aria-label={copy.backPrevious}><IconArrowLeft size={23} /></motion.button><motion.button className={`detail-glass-button detail-save ${savedIds.includes(detailCar.id) ? 'saved' : ''}`} whileTap={{ scale: .9 }} onClick={() => toggleSaved(detailCar.id)} aria-label={`${copy.save} ${detailCar.name}`}><IconHeart size={21} fill={savedIds.includes(detailCar.id) ? 'currentColor' : 'none'} /></motion.button><div className="detail-hero-copy"><span>{detailCar.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, detailCar.type)}</span><h1 id="car-detail-title">{detailCar.name}</h1><p><IconMapPin size={14} /> {minuteCount(locale, detailCar.walk, true)} · {copy.centralGrozny}</p></div></div>
+          <div className="detail-content"><div className="detail-price"><div><span>{copy.dailyRental}</span><strong>₽{detailCar.price.toLocaleString('ru-RU')}<small>/{locale === 'ru' ? 'сутки' : 'day'}</small></strong></div><span className="detail-available"><i />{copy.availableNow}</span></div><div className="detail-metrics"><div><IconGauge size={21} /><span>{copy.range}<strong>{detailCar.range} {locale === 'ru' ? 'км' : 'km'}</strong></span></div><div><IconBattery size={21} /><span>{detailCar.electric ? copy.charge : copy.fuel}<strong>{detailCar.electric ? '82%' : '74%'}</strong></span></div><div><IconUsers size={21} /><span>{copy.seats}<strong>{carSeats(detailCar.name)} {copy.people}</strong></span></div></div><section className="detail-section"><h2>{copy.readyCity}</h2><p>{copy.readyCityDescription}</p></section><section className="detail-section"><h2>{copy.included}</h2><div className="feature-list"><span><IconShieldCheck size={19} />{copy.comprehensiveInsurance}</span><span><IconCar size={19} />{copy.fuelParking}</span><span><IconRoute size={19} />{copy.roadsideSupport}</span></div></section><section className="detail-section detail-location"><h2>{copy.pickup}</h2><div><IconMapPin size={20} /><span><strong>{copy.centralGrozny}</strong><small>{detailCar.walk} {copy.exactAfterReservation}</small></span></div></section></div>
+        </div>
+        <div className="detail-action"><motion.button className={`detail-reserve ${detailReservationIsOpen ? 'reserved' : ''}`} whileTap={{ scale: .98 }} transition={spring} onClick={() => detailReservationIsOpen ? openReservationDetails() : setCheckoutCarId(detailCar.id)} aria-haspopup="dialog">{detailReservationIsOpen ? copy.viewReservationDetails : copy.reserveCar}</motion.button></div>
       </motion.section>}</AnimatePresence>
-      <nav className={`apple-tabbar ${navCovered ? 'covered' : ''}`} aria-label={copy.mainNavigation} aria-hidden={navCovered}>{tabs.map((tab) => { const Icon = tab.icon; const isActive = activeTab === tab.id; return <motion.button key={tab.id} onClick={() => switchTab(tab.id)} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined} tabIndex={navCovered ? -1 : 0} whileTap={{ scale: .92 }} transition={spring}>{isActive && <motion.span className="tab-selection" layoutId="tab-selection" transition={spring} />}<span className="tab-icon"><Icon size={22} stroke={isActive ? 2 : 1.7} fill={isActive && tab.id === 'saved' ? 'currentColor' : 'none'} /></span><small>{copy[tab.id]}</small></motion.button>; })}</nav>
       <AnimatePresence>
-        {checkoutCar && <ReservationCheckout car={checkoutCar} existingReservation={reservation?.carId === checkoutCar.id ? reservation : null} payment={payment} reduceMotion={!!reduceMotion} onClose={() => setCheckoutCarId(null)} onConfirm={(startDate, days) => confirmReservation(checkoutCar, startDate, days)} locale={locale} />}
+        {reservationDetailsRequested && reservation && reservationCar && <ReservationDetail reservation={reservation} car={reservationCar} payment={payment} reduceMotion={!!reduceMotion} backLabel={copy.backPrevious} onClose={() => { setReservationDetailsRequested(false); setSecondaryOverlayOpen(false); }} onModify={() => { setReservationDetailsRequested(false); setSecondaryOverlayOpen(false); openReservationEditor(reservationCar.id); }} onAdvance={advanceReservation} locale={locale} />}
+      </AnimatePresence>
+      <nav className={`apple-tabbar ${navCovered ? 'covered' : ''}`} aria-label={copy.mainNavigation} aria-hidden={navCovered}>
+        <div className="desktop-nav-brand" aria-hidden="true"><span><img draggable={false} src="/valoar-logo.svg" alt="" /></span><strong>CarShare</strong></div>
+        <div className="desktop-nav-label" aria-hidden="true">{copy.mainNavigation}</div>
+        {tabs.map((tab) => { const Icon = tab.icon; const isActive = activeTab === tab.id; return <motion.button key={tab.id} onClick={() => switchTab(tab.id)} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined} tabIndex={navCovered ? -1 : 0} whileTap={{ scale: .92 }} transition={spring}>{isActive && <motion.span className="tab-selection" layoutId="tab-selection" transition={spring} />}<span className="tab-icon"><Icon size={22} stroke={isActive ? 2 : 1.7} fill={isActive && tab.id === 'saved' ? 'currentColor' : 'none'} /></span><small>{copy[tab.id]}</small></motion.button>; })}
+      </nav>
+      <AnimatePresence>
+        {checkoutCar && <ReservationCheckout key={`checkout-${checkoutCar.id}-${reservation?.confirmation ?? 'new'}`} car={checkoutCar} existingReservation={reservation?.carId === checkoutCar.id && reservation.status !== 'completed' ? reservation : null} payment={payment} reduceMotion={!!reduceMotion} onClose={() => setCheckoutCarId(null)} onCancel={() => { cancelReservation(); setCheckoutCarId(null); }} onConfirm={(startDate, pickupTime, days) => confirmReservation(checkoutCar, startDate, pickupTime, days)} locale={locale} />}
         {showFilterSheet && <FleetFilterSheet current={fleetFilters} resultCount={visibleCars.length} locale={locale} reduceMotion={!!reduceMotion} onClose={() => setShowFilterSheet(false)} onApply={saveFleetFilters} onReset={resetFleetFilters} />}
         {showNotifications && <AccountSheet kind="notifications" locale={locale} reduceMotion={!!reduceMotion} profile={profile} payment={payment} licence={licence} notices={notices} onClose={() => setShowNotifications(false)} onSaveProfile={saveProfile} onSavePayment={savePayment} onSaveLicence={saveLicence} onMarkRead={markNoticesRead} />}
       </AnimatePresence>
-      <AnimatePresence>{toast && <motion.div className="app-toast" role="status" initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8 }} transition={spring}><IconCheck size={17} />{toast}</motion.div>}</AnimatePresence>
     </main>
   );
 }
 
 function FleetFilterSheet({ current, locale, reduceMotion, onClose, onApply, onReset }: { current: FleetFilters; resultCount: number; locale: Locale; reduceMotion: boolean; onClose: () => void; onApply: (filters: FleetFilters) => void; onReset: () => void }) {
+  const sheetDragControls = useDragControls();
   const [draft, setDraft] = useState(current);
   const [showBrands, setShowBrands] = useState(false);
   const [brandFocused, setBrandFocused] = useState(false);
@@ -457,7 +564,8 @@ function FleetFilterSheet({ current, locale, reduceMotion, onClose, onApply, onR
     closeBrandPicker();
   }
   return <motion.div className="reservation-overlay feature-overlay filter-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? .01 : .22 }} onClick={onClose}>
-    <motion.section className="feature-sheet filter-sheet" role="dialog" aria-modal="true" aria-labelledby="filter-sheet-title" initial={reduceMotion ? { opacity: 0 } : { y: 42, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} onClick={(event) => event.stopPropagation()}>
+    <motion.section className="feature-sheet filter-sheet" role="dialog" aria-modal="true" aria-labelledby="filter-sheet-title" initial={reduceMotion ? { opacity: 0 } : { y: 42, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} drag={reduceMotion ? false : 'y'} dragControls={sheetDragControls} dragListener={false} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: .2 }} onDragEnd={(_, info) => { if (shouldDismissSheet(info)) onClose(); }} onClick={(event) => event.stopPropagation()}>
+      <div className="sheet-grabber-zone" aria-hidden="true" onPointerDown={(event) => sheetDragControls.start(event.nativeEvent)}><span /></div>
       <header className="feature-sheet-header"><div><span>{resultCount} {text.filterResults}</span><h2 id="filter-sheet-title">{text.filters}</h2></div><motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={text.close}><IconX size={21} /></motion.button></header>
       <div className={`feature-sheet-scroll filter-focus-stage ${brandFocused ? 'brand-focused' : ''}`} ref={scrollRef}>
         <AnimatePresence initial={false} mode="popLayout">
@@ -468,34 +576,135 @@ function FleetFilterSheet({ current, locale, reduceMotion, onClose, onApply, onR
           {!brandFocused && <motion.div className="filter-tail" key="filter-tail" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }}><section className="filter-group class-filter"><h3>{text.carClass}</h3><div className="choice-grid">{filters.map((item) => <motion.button whileTap={{ scale: .96 }} transition={spring} key={item} className={draft.carClass === item ? 'active' : ''} onClick={() => setDraft({ ...draft, carClass: item })}>{item === 'All' ? getCopy(locale).allCars : carTypeLabel(locale, item)}</motion.button>)}</div></section><motion.button type="button" className="inline-reset-action" whileTap={{ scale: .98 }} transition={spring} onClick={() => { setDraft(emptyFleetFilters); onReset(); }}>{text.reset}</motion.button></motion.div>}
         </AnimatePresence>
       </div>
-      <div className="feature-sheet-actions"><motion.button className="primary-action" whileTap={{ scale: .98 }} transition={spring} onClick={() => onApply(draft)}>{text.apply} · {resultCount}</motion.button></div>
+      <div className="feature-sheet-actions"><motion.button className="primary-action" whileTap={{ scale: .98 }} transition={spring} onClick={() => onApply(draft)}>{text.apply}</motion.button></div>
     </motion.section>
   </motion.div>;
 }
 
-function ReservationCheckout({ car, existingReservation, payment, reduceMotion, onClose, onConfirm, locale }: { car: Car; existingReservation: Reservation | null; payment: PaymentData; reduceMotion: boolean; onClose: () => void; onConfirm: (startDate: string, days: number) => void; locale: Locale }) {
+type WheelOption = { value: string; label: string; disabled?: boolean };
+
+function WheelColumn({ options, value, label, className = '', onChange }: { options: WheelOption[]; value: string; label: string; className?: string; onChange: (value: string) => void }) {
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const settleTimer = useRef<number | null>(null);
+  const interacting = useRef(false);
+  const valueRef = useRef(value);
+  useEffect(() => { valueRef.current = value; }, [value]);
+  useEffect(() => {
+    const index = Math.max(0, options.findIndex((option) => option.value === value));
+    const wheel = wheelRef.current;
+    if (!wheel || interacting.current || Math.abs(wheel.scrollTop - index * 36) < 2) return;
+    wheel.scrollTo({ top: index * 36, behavior: 'auto' });
+  }, [options, value]);
+  useEffect(() => () => { if (settleTimer.current !== null) window.clearTimeout(settleTimer.current); }, []);
+  function settleSelection() {
+    const wheel = wheelRef.current;
+    if (!wheel) return;
+    let index = Math.max(0, Math.min(options.length - 1, Math.round(wheel.scrollTop / 36)));
+    if (options[index].disabled) index = Math.max(0, options.findIndex((option, optionIndex) => optionIndex >= index && !option.disabled));
+    const next = options[index];
+    wheel.scrollTo({ top: index * 36, behavior: 'smooth' });
+    if (next && next.value !== valueRef.current) {
+      valueRef.current = next.value;
+      triggerHaptic('selection');
+      onChange(next.value);
+    }
+  }
+  function scheduleSettle(delay = 120) {
+    if (settleTimer.current !== null) window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(settleSelection, delay);
+  }
+  return <div className={`ios-wheel-column ${className}`} role="listbox" aria-label={label} ref={wheelRef} onScroll={() => scheduleSettle(140)} onTouchStart={() => { interacting.current = true; if (settleTimer.current !== null) window.clearTimeout(settleTimer.current); }} onTouchEnd={() => { interacting.current = false; scheduleSettle(150); }} onPointerDown={() => { interacting.current = true; }} onPointerUp={() => { interacting.current = false; scheduleSettle(100); }} onPointerCancel={() => { interacting.current = false; scheduleSettle(100); }}>
+    {options.map((option, index) => <button type="button" role="option" aria-selected={option.value === value} disabled={option.disabled} key={option.value} onClick={() => { wheelRef.current?.scrollTo({ top: index * 36, behavior: 'smooth' }); scheduleSettle(180); }}>{option.label}</button>)}
+  </div>;
+}
+
+function ReservationCheckout({ car, existingReservation, payment, reduceMotion, onClose, onCancel, onConfirm, locale }: { car: Car; existingReservation: Reservation | null; payment: PaymentData; reduceMotion: boolean; onClose: () => void; onCancel: () => void; onConfirm: (startDate: string, pickupTime: string, days: number) => void; locale: Locale }) {
+  const sheetDragControls = useDragControls();
   const pickupDates = useMemo(() => Array.from({ length: 30 }, (_, index) => addDaysISO(todayISO(), index)).filter(Boolean), []);
+  const dateOptions = useMemo(() => {
+    const today = todayISO();
+    const baseDate = parseISODate(today);
+    if (!baseDate) return [];
+    return Array.from({ length: 32 }, (_, index) => {
+      const date = new Date(baseDate);
+      date.setUTCDate(date.getUTCDate() + index - 2);
+      const value = date.toISOString().slice(0, 10);
+      return { value, label: value === today ? (locale === 'ru' ? 'Сегодня' : 'Today') : formatPickupDate(value, locale), disabled: value < today };
+    });
+  }, [locale]);
+  const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, index) => {
+    const hour = String(index).padStart(2, '0');
+    return { value: hour, label: `${hour}:00` };
+  }), []);
+  const initialTime = isValidPickupTime(existingReservation?.pickupTime) ? existingReservation.pickupTime : '10:00';
   const [startDate, setStartDate] = useState(() => existingReservation?.startDate && pickupDates.includes(existingReservation.startDate) ? existingReservation.startDate : pickupDates[0]);
+  const [pickupHour, setPickupHour] = useState(initialTime.slice(0, 2));
   const [days, setDays] = useState(existingReservation?.days ?? 1);
   const [showDateMenu, setShowDateMenu] = useState(false);
-  const total = car.price * days;
+  const [dateFocused, setDateFocused] = useState(false);
+  const [step, setStep] = useState<'rental' | 'payment'>('rental');
+  const dateTimer = useRef<number | null>(null);
+  const pickupTime = `${pickupHour}:00`;
+  const pickupTimeLabel = formatPickupTime(pickupTime, locale);
+  const pricing = reservationPriceBreakdown(car, startDate, days, existingReservation?.bookedOn);
+  const total = pricing.total;
   const validStartDate = isValidISODate(startDate) && startDate >= todayISO();
   const copy = getCopy(locale);
+  useEffect(() => () => { if (dateTimer.current !== null) window.clearTimeout(dateTimer.current); }, []);
+  function openDatePicker() {
+    if (dateTimer.current !== null) window.clearTimeout(dateTimer.current);
+    setDateFocused(true);
+    dateTimer.current = window.setTimeout(() => setShowDateMenu(true), reduceMotion ? 0 : 210);
+  }
+  function closeDatePicker() {
+    if (dateTimer.current !== null) window.clearTimeout(dateTimer.current);
+    setShowDateMenu(false);
+    dateTimer.current = window.setTimeout(() => setDateFocused(false), reduceMotion ? 0 : 210);
+  }
   return <motion.div className="reservation-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? .01 : .24, ease: 'easeOut' }} onClick={onClose}>
-    <motion.section className="reservation-sheet" role="dialog" aria-modal="true" aria-labelledby="reservation-title" initial={reduceMotion ? { opacity: 0 } : { y: 52, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 28, scale: .99, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} onClick={(event) => { event.stopPropagation(); if (showDateMenu) setShowDateMenu(false); }}>
-      <header className="reservation-header"><div><span>{locale === 'ru' ? `${dayCount(locale, days)} аренды` : `${days}-day rental`}</span><h2 id="reservation-title">{existingReservation ? copy.modifyReservation : copy.confirmReservation}</h2></div><motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={copy.closeReservation} autoFocus><IconX size={21} /></motion.button></header>
-      <div className="reservation-scroll-content">
-      <div className="reservation-car"><img draggable={false} src={car.image} alt="" /><div><span>{carTypeLabel(locale, car.type)}</span><strong>{car.name}</strong><small>{car.plate} · {copy.centralGrozny}</small></div></div>
-      <section className="checkout-section"><h3>{copy.rentalDates}</h3><div className="rental-controls"><div className={`pickup-control ${showDateMenu ? 'open' : ''}`}><span>{copy.pickupDate}</span><motion.button type="button" whileTap={{ scale: .97 }} onClick={(event) => { event.stopPropagation(); setShowDateMenu((current) => !current); }} aria-label={copy.pickupDate} aria-haspopup="listbox" aria-expanded={showDateMenu}><strong>{formatPickupDate(startDate, locale)}</strong><motion.span animate={{ rotate: showDateMenu ? 180 : 0 }} transition={{ duration: reduceMotion ? .01 : .2 }}><IconChevronDown size={16} /></motion.span></motion.button><AnimatePresence>{showDateMenu && <motion.div className="ios-date-menu" role="listbox" aria-label={copy.choosePickupDate} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -5, scale: .98 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => { if (event.key === 'Escape') setShowDateMenu(false); }}>{pickupDates.map((date) => <button type="button" key={date} role="option" aria-selected={date === startDate} className={date === startDate ? 'selected' : ''} autoFocus={date === startDate} onClick={() => { setStartDate(date); setShowDateMenu(false); }}><span>{formatPickupDate(date, locale)}</span>{date === startDate && <IconCheck size={17} />}</button>)}</motion.div>}</AnimatePresence></div><div className="duration-control"><span>{copy.rentalLength}</span><div><motion.button whileTap={{ scale: .9 }} onClick={() => setDays((current) => Math.max(1, current - 1))} disabled={days === 1} aria-label={copy.decreaseRental}>−</motion.button><strong>{dayCount(locale, days)}</strong><motion.button whileTap={{ scale: .9 }} onClick={() => setDays((current) => Math.min(30, current + 1))} disabled={days === 30} aria-label={copy.increaseRental}>+</motion.button></div></div></div><p className={`rental-date-range ${validStartDate ? '' : 'invalid'}`}><IconClock size={16} /> {validStartDate ? <>{formatRentalDate(startDate, locale)} → {formatRentalDate(addDaysISO(startDate, days), locale)}</> : copy.chooseValidDate}</p></section>
-      <section className="checkout-section"><h3>{copy.paymentMethod}</h3><div className="mock-payment"><span className="mock-card-icon"><IconCreditCard size={21} /></span><div><strong>{payment.label}</strong><small>TEST •••• {payment.last4}</small></div><span className="selected-payment"><IconCheck size={16} /></span></div><p><IconShieldCheck size={16} /> {copy.developmentPayment}</p></section>
-      <section className="checkout-section"><h3>{copy.paymentSummary}</h3><div className="checkout-receipt"><div><span>{copy.rental} · {dayCount(locale, days)}</span><b>₽{total.toLocaleString('ru-RU')}</b></div><div><span>{copy.refundableDeposit}</span><b>₽0</b></div><div><strong>{copy.total}</strong><strong>₽{total.toLocaleString('ru-RU')}</strong></div></div></section>
+    <motion.section className={`reservation-sheet step-${step} ${existingReservation ? 'editing-reservation' : ''}`} role="dialog" aria-modal="true" aria-labelledby="reservation-title" initial={reduceMotion ? { opacity: 0 } : { y: 52, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 28, scale: .99, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} drag={reduceMotion ? false : 'y'} dragControls={sheetDragControls} dragListener={false} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: .2 }} onDragEnd={(_, info) => { if (shouldDismissSheet(info)) onClose(); }} onClick={(event) => { event.stopPropagation(); if (showDateMenu) closeDatePicker(); }}>
+      <div className="sheet-grabber-zone" aria-hidden="true" onPointerDown={(event) => sheetDragControls.start(event.nativeEvent)}><span /></div>
+      <header className="reservation-header">
+        {step === 'payment' ? <motion.button className="reservation-back" whileTap={{ scale: .9 }} onClick={() => setStep('rental')} aria-label={copy.backPrevious}><IconArrowLeft size={21} /></motion.button> : <span className="reservation-header-spacer" />}
+        <div><span>{locale === 'ru' ? `Шаг ${step === 'rental' ? '1' : '2'} из 2` : `Step ${step === 'rental' ? '1' : '2'} of 2`}</span><h2 id="reservation-title">{step === 'rental' ? copy.rentalDates : (existingReservation ? copy.updateReservation : copy.confirmReservation)}</h2></div>
+        <motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={copy.closeReservation}><IconX size={21} /></motion.button>
+      </header>
+      <div className="reservation-step-viewport">
+        <AnimatePresence initial={false} mode="wait">
+          {step === 'rental' ? <motion.div key="rental" className={`reservation-scroll-content reservation-step-content ${dateFocused ? 'date-focused' : ''}`} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }} transition={spring}>
+            <AnimatePresence initial={false}>{!dateFocused && <motion.div layout className="reservation-car" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }}><img draggable={false} src={car.image} alt="" /><div><span>{carTypeLabel(locale, car.type)}</span><strong>{car.name}</strong><small>{car.plate} · {copy.centralGrozny}</small></div></motion.div>}</AnimatePresence>
+            <motion.section layout="position" className="checkout-section rental-date-section" transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }}>
+              <h3>{copy.rentalDates}</h3>
+              <div className={`rental-controls ${dateFocused ? 'date-focused' : ''}`}>
+                <AnimatePresence initial={false}>{!dateFocused && <motion.div key="duration" className="duration-control" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }}><span>{copy.rentalLength}</span><div><motion.button whileTap={{ scale: .9 }} onClick={() => setDays((current) => Math.max(1, current - 1))} disabled={days === 1} aria-label={copy.decreaseRental}>−</motion.button><strong>{dayCount(locale, days)}</strong><motion.button whileTap={{ scale: .9 }} onClick={() => setDays((current) => Math.min(30, current + 1))} disabled={days === 30} aria-label={copy.increaseRental}>+</motion.button></div></motion.div>}</AnimatePresence>
+                <motion.div layout="position" className={`pickup-control ${showDateMenu ? 'open' : ''}`} transition={reduceMotion ? { duration: .01 } : spring}>
+                  <span>{copy.pickupDate}</span>
+                  <motion.button type="button" whileTap={{ scale: .97 }} onClick={(event) => { event.stopPropagation(); if (dateFocused) closeDatePicker(); else openDatePicker(); }} aria-label={copy.pickupDate} aria-haspopup="dialog" aria-expanded={showDateMenu}><strong>{formatRentalDate(startDate, locale)} · {pickupTimeLabel}</strong><motion.span animate={{ rotate: showDateMenu ? 180 : 0 }} transition={{ duration: reduceMotion ? .01 : .2 }}><IconChevronDown size={16} /></motion.span></motion.button>
+                  <AnimatePresence>{showDateMenu && <motion.div className="ios-date-wheel" role="group" aria-label={copy.choosePickupDate} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12, scaleY: .92 }} animate={{ opacity: 1, y: 0, scaleY: 1 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scaleY: .94 }} transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }} style={{ transformOrigin: 'top' }} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => { if (event.key === 'Escape') closeDatePicker(); }}>
+                    <WheelColumn className="date" options={dateOptions} value={startDate} label={copy.pickupDate} onChange={setStartDate} />
+                    <WheelColumn className="hour" options={hourOptions} value={pickupHour} label={locale === 'ru' ? 'Часы' : 'Hour'} onChange={setPickupHour} />
+                  </motion.div>}</AnimatePresence>
+                </motion.div>
+              </div>
+              <AnimatePresence initial={false}>{!dateFocused && <motion.p key="range" className={`rental-date-range ${validStartDate ? '' : 'invalid'}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={reduceMotion ? { duration: .01 } : { ...spring, duration: .2 }}><IconClock size={16} /> {validStartDate ? <>{formatRentalDate(startDate, locale)} · {pickupTimeLabel} → {formatRentalDate(addDaysISO(startDate, days), locale)}</> : copy.chooseValidDate}</motion.p>}</AnimatePresence>
+            </motion.section>
+          </motion.div> : <motion.div key="payment" className="reservation-scroll-content reservation-step-content" initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }} transition={spring}>
+            <div className="reservation-car compact"><img draggable={false} src={car.image} alt="" /><div><span>{carTypeLabel(locale, car.type)}</span><strong>{car.name}</strong><small>{formatRentalDate(startDate, locale)} · {pickupTimeLabel} → {formatRentalDate(addDaysISO(startDate, days), locale)}</small></div></div>
+            <section className="checkout-section"><h3>{copy.paymentMethod}</h3><div className="mock-payment"><span className="mock-card-icon"><IconCreditCard size={21} /></span><div><strong>{payment.label}</strong><small>TEST •••• {payment.last4}</small></div><span className="selected-payment"><IconCheck size={16} /></span></div><p><IconShieldCheck size={16} /> {copy.developmentPayment}</p></section>
+            <section className="checkout-section"><h3>{copy.paymentSummary}</h3><div className="checkout-receipt"><div><span>{copy.rental} · {dayCount(locale, days)}</span><b>₽{pricing.rentalFee.toLocaleString('ru-RU')}</b></div><div><span>{locale === 'ru' ? `Ожидание получения · ${dayCount(locale, pricing.waitDays)}` : `Pickup wait · ${dayCount(locale, pricing.waitDays)}`}</span><b>₽{pricing.pickupWaitFee.toLocaleString('ru-RU')}</b></div><div><span>{copy.refundableDeposit}</span><b>₽0</b></div><div><strong>{copy.total}</strong><strong>₽{total.toLocaleString('ru-RU')}</strong></div></div></section>
+          </motion.div>}
+        </AnimatePresence>
       </div>
-      <motion.button className="confirm-reservation" whileTap={{ scale: .98 }} transition={spring} onClick={() => onConfirm(startDate, days)} disabled={!validStartDate}><span>{existingReservation ? copy.updateReservation : copy.confirmReservation}</span><b>{copy.mockPay} ₽{total.toLocaleString('ru-RU')}</b></motion.button>
+      <div className="reservation-checkout-actions">
+        {step === 'rental' && <motion.div className="rental-live-total" aria-live="polite" layout transition={spring}><span><strong>{copy.total}</strong><small>{locale === 'ru' ? 'Аренда' : 'Rental'} ₽{pricing.rentalFee.toLocaleString('ru-RU')}</small><small>{locale === 'ru' ? 'Ожидание' : 'Pickup wait'} ₽{pickupWaitDailyFee.toLocaleString('ru-RU')} × {pricing.waitDays}</small></span><b>₽{total.toLocaleString('ru-RU')}</b></motion.div>}
+        {step === 'rental' ? <motion.button className="confirm-reservation" whileTap={{ scale: .98 }} transition={spring} onClick={() => { closeDatePicker(); setStep('payment'); }} disabled={!validStartDate}>{copy.continue}</motion.button> : <motion.button className="confirm-reservation" whileTap={{ scale: .98 }} transition={spring} onClick={() => onConfirm(startDate, pickupTime, days)}>{existingReservation ? copy.updateReservation : copy.confirmReservation}</motion.button>}
+        {existingReservation && <motion.button className="cancel-edit-reservation" whileTap={{ opacity: .55 }} transition={spring} onClick={onCancel}>{copy.cancelReservation}</motion.button>}
+      </div>
     </motion.section>
   </motion.div>;
 }
 
-function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved, reservation, reservationCar, reservationDetailsRequested, clearReservationDetailsRequest, modifyReservation, cancelReservation, advanceReservation, extendReservation, onOverlayVisibilityChange, locale, changeLocale, theme, changeTheme, notices, markNoticesRead, profile, payment, licence, saveProfile, savePayment, saveLicence }: { activeTab: Exclude<TabId, 'explore'>; savedIds: number[]; signOut: () => void; openSavedCar: (id: number) => void; toggleSaved: (id: number) => void; reservation: Reservation | null; reservationCar: Car | null; reservationDetailsRequested: boolean; clearReservationDetailsRequest: () => void; modifyReservation: (id: number) => void; cancelReservation: () => void; advanceReservation: () => void; extendReservation: () => void; onOverlayVisibilityChange: (open: boolean) => void; locale: Locale; changeLocale: (locale: Locale) => void; theme: Theme; changeTheme: (theme: Theme) => void; notices: AppNotice[]; markNoticesRead: () => void; profile: ProfileData; payment: PaymentData; licence: LicenceData; saveProfile: (profile: ProfileData) => void; savePayment: (payment: PaymentData) => void; saveLicence: (licence: LicenceData) => void }) {
+function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved, reservation, reservationCar, modifyReservation, advanceReservation, onOverlayVisibilityChange, locale, changeLocale, theme, changeTheme, notices, markNoticesRead, profile, payment, licence, saveProfile, savePayment, saveLicence }: { activeTab: Exclude<TabId, 'explore'>; savedIds: number[]; signOut: () => void; openSavedCar: (id: number) => void; toggleSaved: (id: number) => void; reservation: Reservation | null; reservationCar: Car | null; modifyReservation: (id: number) => void; advanceReservation: () => void; onOverlayVisibilityChange: (open: boolean) => void; locale: Locale; changeLocale: (locale: Locale) => void; theme: Theme; changeTheme: (theme: Theme) => void; notices: AppNotice[]; markNoticesRead: () => void; profile: ProfileData; payment: PaymentData; licence: LicenceData; saveProfile: (profile: ProfileData) => void; savePayment: (payment: PaymentData) => void; saveLicence: (licence: LicenceData) => void }) {
   const reduceMotion = useReducedMotion();
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showFinances, setShowFinances] = useState(false);
@@ -506,10 +715,10 @@ function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved
   const totalDistance = trips.reduce((sum, trip) => sum + trip.distance, 0);
   const copy = getCopy(locale);
 
-  return <section className="secondary-page" aria-labelledby={`${activeTab}-title`}>
+  return <section className={`secondary-page secondary-page-${activeTab}`} aria-labelledby={`${activeTab}-title`}>
     <header className="secondary-header"><div><span>CarShare</span><h1 id={`${activeTab}-title`}>{copy[activeTab]}</h1></div></header>
     {activeTab === 'trips' && <div className="secondary-content">
-      {reservation && reservationCar && <><div className="section-heading upcoming-heading"><h2>{statusLabel(locale, reservation.status)}</h2></div><motion.button className={`upcoming-reservation status-${reservation.status}`} onClick={() => { onOverlayVisibilityChange(true); setShowReservation(true); }} whileTap={{ scale: .985 }} transition={spring} aria-label={`${copy.openReservation} ${reservationCar.name}`}><div className="upcoming-car-image"><img draggable={false} src={reservationCar.image} alt="" /></div><div><span>{statusLabel(locale, reservation.status)}</span><strong>{reservationCar.name}</strong><small>{formatRentalDate(reservation.startDate, locale)} · {dayCount(locale, reservation.days)}</small><p>{copy.centralGrozny}</p></div><IconChevronRight size={18} /></motion.button></>}
+      {reservation && reservationCar && <><div className="section-heading upcoming-heading"><h2>{statusLabel(locale, reservation.status)}</h2></div><motion.button className={`upcoming-reservation status-${reservation.status}`} onClick={() => { onOverlayVisibilityChange(true); setShowReservation(true); }} whileTap={{ scale: .985 }} transition={spring} aria-label={`${copy.openReservation} ${reservationCar.name}`}><div className="upcoming-car-image"><img draggable={false} src={reservationCar.image} alt="" /></div><div><span>{statusLabel(locale, reservation.status)}</span><strong>{reservationCar.name}</strong><small>{formatRentalDate(reservation.startDate, locale)} · {formatPickupTime(reservation.pickupTime, locale)} · {dayCount(locale, reservation.days)}</small><p>{copy.centralGrozny}</p></div><IconChevronRight size={18} /></motion.button></>}
       <motion.button className="activity-card activity-card-button" onClick={() => { onOverlayVisibilityChange(true); setShowFinances(true); }} whileTap={{ scale: .985 }} transition={spring} aria-label={copy.openTripActivity}>
         <div><span>{copy.augustActivity}</span><strong>{dayCount(locale, totalDays)}</strong><p>{copy.across} {tripCount(locale, trips.length)}</p><small>{copy.viewSpending} <IconChevronRight size={14} /></small></div>
         <div className="activity-ring"><span>₽{totalSpend.toLocaleString('ru-RU')}</span><small>{copy.total.toLocaleLowerCase()}</small></div>
@@ -517,11 +726,11 @@ function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved
       <div className="section-heading"><h2>{copy.recentTrips}</h2><button onClick={() => { onOverlayVisibilityChange(true); setShowFinances(true); }}>{copy.seeAll} <IconChevronRight size={15} /></button></div>
       <div className="grouped-list">{trips.slice(0, 2).map((trip) => <motion.button className="trip-row" key={trip.id} onClick={() => { onOverlayVisibilityChange(true); setSelectedTrip(trip); }} whileTap={{ backgroundColor: 'rgba(255,255,255,.07)' }} transition={spring} aria-label={`${copy.openTrip} ${trip.car}`}><span className="row-icon green"><IconCheck size={18} /></span><div><strong>{trip.car}</strong><p>{tripDate(locale, trip.date)} · {dayCount(locale, trip.days)}</p><small>{tripPlace(locale, trip.from)} → {tripPlace(locale, trip.to)}</small></div><span className="trip-price">₽{trip.price.toLocaleString('ru-RU')}<IconChevronRight size={16} /></span></motion.button>)}</div>
     </div>}
-    {activeTab === 'saved' && <div className="secondary-content"><p className="page-intro">{copy.savedDescription}</p><div className="vehicle-list"><motion.div className="vehicle-set saved-vehicle-set" layout transition={spring}><AnimatePresence initial={false} mode="popLayout">{cars.filter((car) => savedIds.includes(car.id)).map((car, index) => <motion.article layout className="vehicle-card" key={car.id} role="button" tabIndex={0} onClick={() => openSavedCar(car.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openSavedCar(car.id); }} aria-label={`${copy.openDetails} ${car.name}`} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .96 }} transition={{ ...spring, delay: reduceMotion ? 0 : index * .045 }} whileTap={{ scale: .985 }}><div className="vehicle-photo"><img draggable={false} src={car.image} alt={car.name} /><span className="brand-badge" aria-hidden="true"><img draggable={false} src={carBrandLogo(car.name)} alt="" /></span></div><div className="vehicle-copy"><div className="vehicle-topline"><span>{car.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, car.type)}</span><button className="saved" onClick={(event) => { event.stopPropagation(); toggleSaved(car.id); }} aria-label={`${copy.remove} ${car.name}`}><IconHeart size={19} fill="currentColor" /></button></div><h3>{car.name}</h3><p>{car.plate}</p><div className="vehicle-footer"><strong>₽{car.price.toLocaleString('ru-RU')}</strong></div></div></motion.article>)}</AnimatePresence></motion.div></div></div>}
+    {activeTab === 'saved' && <div className="secondary-content"><p className="page-intro">{copy.savedDescription}</p><div className="vehicle-list"><motion.div className="vehicle-set saved-vehicle-set" layout transition={spring}><AnimatePresence initial={false} mode="popLayout">{cars.filter((car) => savedIds.includes(car.id)).map((car, index) => <motion.article layout className="vehicle-card" key={car.id} role="button" tabIndex={0} onClick={() => openSavedCar(car.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') openSavedCar(car.id); }} aria-label={`${copy.openDetails} ${car.name}`} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: .985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .96 }} transition={{ ...spring, delay: reduceMotion ? 0 : index * .03 }} whileTap={{ scale: .985 }}><div className="vehicle-photo"><img draggable={false} width={720} height={450} loading="lazy" decoding="async" src={car.image} alt={car.name} /><span className="brand-badge" aria-hidden="true"><img draggable={false} width={22} height={22} loading="lazy" decoding="async" src={carBrandLogo(car.name)} alt="" /></span></div><div className="vehicle-copy"><div className="vehicle-topline"><span>{car.electric && <IconBolt size={12} fill="currentColor" />}{carTypeLabel(locale, car.type)}</span><button className="saved" onClick={(event) => { event.stopPropagation(); toggleSaved(car.id); }} aria-label={`${copy.remove} ${car.name}`}><IconHeart size={19} fill="currentColor" /></button></div><h3>{car.name}</h3><p>{car.plate}</p><div className="vehicle-footer"><strong>₽{car.price.toLocaleString('ru-RU')}</strong></div></div></motion.article>)}</AnimatePresence></motion.div></div></div>}
     {activeTab === 'account' && <div className="secondary-content"><motion.button className="profile-card profile-card-button" whileTap={{ scale: .985 }} onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('profile'); }}><div className="large-avatar">{profile.name.trim().charAt(0).toUpperCase() || 'N'}</div><div><strong>{profile.name}</strong><span>{profile.email}</span></div><IconChevronRight size={19} /></motion.button><div className="section-heading"><h2>{copy.preferences}</h2></div><div className="grouped-list settings-list"><button onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('payment'); }}><span className="row-icon blue"><IconCreditCard size={18} /></span><div><strong>{copy.paymentMethod}</strong><small>{payment.label} ·· {payment.last4}</small></div><IconChevronRight size={18} /></button><button onClick={() => { onOverlayVisibilityChange(true); setAccountSheet('licence'); }}><span className="row-icon purple"><IconId size={18} /></span><div><strong>{copy.drivingDocuments}</strong><small>{licence.verified ? copy.verified : licence.expiry}</small></div><IconChevronRight size={18} /></button><div className="language-setting appearance-setting"><span className="row-icon indigo">{theme === 'dark' ? <IconMoon size={18} /> : <IconSun size={18} />}</span><div><strong>{copy.appearance}</strong><small>{theme === 'dark' ? copy.dark : copy.light}</small></div><div className="language-switch appearance-switch" role="group" aria-label={copy.appearance}><button type="button" className={theme === 'dark' ? 'active' : ''} aria-label={copy.dark} aria-pressed={theme === 'dark'} onClick={() => changeTheme('dark')}><IconMoon size={16} /></button><button type="button" className={theme === 'light' ? 'active' : ''} aria-label={copy.light} aria-pressed={theme === 'light'} onClick={() => changeTheme('light')}><IconSun size={16} /></button></div></div><div className="language-setting"><span className="row-icon language"><IconLanguage size={18} /></span><div><strong>{copy.language}</strong><small>{locale === 'en' ? copy.english : copy.russian}</small></div><div className="language-switch language-code-switch" role="group" aria-label={copy.language}><button type="button" className={locale === 'en' ? 'active' : ''} aria-label={copy.english} aria-pressed={locale === 'en'} onClick={() => changeLocale('en')}><span aria-hidden="true">EN</span></button><button type="button" className={locale === 'ru' ? 'active' : ''} aria-label={copy.russian} aria-pressed={locale === 'ru'} onClick={() => changeLocale('ru')}><span aria-hidden="true">RU</span></button></div></div></div><button className="apple-signout" onClick={signOut}><IconLogout size={18} /> {copy.signOut}</button></div>}
 
     <AnimatePresence>
-      {(showReservation || reservationDetailsRequested) && reservation && reservationCar && <ReservationDetail reservation={reservation} car={reservationCar} payment={payment} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowReservation(false); clearReservationDetailsRequest(); }} onModify={() => { onOverlayVisibilityChange(false); setShowReservation(false); clearReservationDetailsRequest(); modifyReservation(reservationCar.id); }} onCancel={() => { onOverlayVisibilityChange(false); cancelReservation(); setShowReservation(false); clearReservationDetailsRequest(); }} onAdvance={advanceReservation} onExtend={extendReservation} locale={locale} />}
+      {showReservation && reservation && reservationCar && <ReservationDetail reservation={reservation} car={reservationCar} payment={payment} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowReservation(false); }} onModify={() => { onOverlayVisibilityChange(false); setShowReservation(false); modifyReservation(reservationCar.id); }} onAdvance={advanceReservation} locale={locale} />}
       {selectedTrip && <TripDetail trip={selectedTrip} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setSelectedTrip(null); }} locale={locale} />}
       {showFinances && <FinanceDetail totalSpend={totalSpend} totalDays={totalDays} totalDistance={totalDistance} reduceMotion={!!reduceMotion} onClose={() => { onOverlayVisibilityChange(false); setShowFinances(false); }} onSelectTrip={(trip) => { setShowFinances(false); setSelectedTrip(trip); }} locale={locale} />}
       {accountSheet && <AccountSheet kind={accountSheet} locale={locale} reduceMotion={!!reduceMotion} profile={profile} payment={payment} licence={licence} notices={notices} onClose={() => { onOverlayVisibilityChange(false); setAccountSheet(null); }} onSaveProfile={(next) => { saveProfile(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onSavePayment={(next) => { savePayment(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onSaveLicence={(next) => { saveLicence(next); onOverlayVisibilityChange(false); setAccountSheet(null); }} onMarkRead={markNoticesRead} />}
@@ -530,6 +739,7 @@ function SecondaryPage({ activeTab, savedIds, signOut, openSavedCar, toggleSaved
 }
 
 function AccountSheet({ kind, locale, reduceMotion, profile, payment, licence, notices, onClose, onSaveProfile, onSavePayment, onSaveLicence, onMarkRead }: { kind: AccountSheetKind; locale: Locale; reduceMotion: boolean; profile: ProfileData; payment: PaymentData; licence: LicenceData; notices: AppNotice[]; onClose: () => void; onSaveProfile: (profile: ProfileData) => void; onSavePayment: (payment: PaymentData) => void; onSaveLicence: (licence: LicenceData) => void; onMarkRead: () => void }) {
+  const sheetDragControls = useDragControls();
   const [profileDraft, setProfileDraft] = useState(profile);
   const [paymentDraft, setPaymentDraft] = useState(payment);
   const [licenceDraft, setLicenceDraft] = useState(licence);
@@ -550,9 +760,10 @@ function AccountSheet({ kind, locale, reduceMotion, profile, payment, licence, n
     if (kind === 'licence') onSaveLicence(licenceDraft);
   }
   return <motion.div className="reservation-overlay feature-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? .01 : .22 }} onClick={onClose}>
-    <motion.section className="feature-sheet account-sheet" role="dialog" aria-modal="true" aria-labelledby="account-sheet-title" initial={reduceMotion ? { opacity: 0 } : { y: 42, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} onClick={(event) => event.stopPropagation()}>
+    <motion.section className={`feature-sheet account-sheet ${kind === 'notifications' ? 'notifications-sheet' : ''}`} role="dialog" aria-modal="true" aria-labelledby="account-sheet-title" initial={reduceMotion ? { opacity: 0 } : { y: 42, scale: .985, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }} transition={reduceMotion ? { duration: .01 } : sheetSpring} drag={reduceMotion ? false : 'y'} dragControls={sheetDragControls} dragListener={false} dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: .2 }} onDragEnd={(_, info) => { if (shouldDismissSheet(info)) onClose(); }} onClick={(event) => event.stopPropagation()}>
+      <div className="sheet-grabber-zone" aria-hidden="true" onPointerDown={(event) => sheetDragControls.start(event.nativeEvent)}><span /></div>
       <header className="feature-sheet-header"><div><span>CarShare</span><h2 id="account-sheet-title">{title}</h2></div><motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={text.close}><IconX size={21} /></motion.button></header>
-      {kind === 'notifications' ? <div className="notification-center">{notices.length ? notices.map((notice) => { const item = noticeCopy(locale, notice); return <article key={notice.id} className={notice.read ? 'read' : ''}><span><IconBell size={17} /></span><div><strong>{item.title}</strong><p>{item.body}</p><small>{new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(notice.createdAt))}</small></div></article>; }) : <div className="empty-notifications"><IconBell size={28} /><p>{text.noNotifications}</p></div>}{notices.some((notice) => !notice.read) && <motion.button className="primary-action" whileTap={{ scale: .98 }} onClick={onMarkRead}>{text.markAllRead}</motion.button>}</div> : <form className="account-form" onSubmit={submit}>
+      {kind === 'notifications' ? <div className="notification-center"><div className="notification-list">{notices.length ? notices.slice(0, 4).map((notice) => { const item = noticeCopy(locale, notice); return <article key={notice.id} className={notice.read ? 'read' : ''}><span><IconBell size={17} /></span><div><strong>{item.title}</strong><p>{item.body}</p><small>{new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(notice.createdAt))}</small></div></article>; }) : <div className="empty-notifications"><IconBell size={28} /><p>{text.noNotifications}</p></div>}</div>{notices.length > 0 && <motion.button className="primary-action notification-read-action" whileTap={{ scale: .98 }} onClick={onMarkRead} disabled={!notices.some((notice) => !notice.read)}>{notices.some((notice) => !notice.read) ? text.markAllRead : text.allRead}</motion.button>}</div> : <form className="account-form" onSubmit={submit}>
         {kind === 'profile' && <><label>{text.fullName}<input autoComplete="name" value={profileDraft.name} maxLength={40} aria-invalid={!profileValidity.name} onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value.replace(/[^\p{L}\s'’-]/gu, '').slice(0, 40) })} required /><small className={profileValidity.name ? '' : 'invalid'}>{text.nameRule}</small></label><label>{getCopy(locale).email}<input type="email" autoComplete="email" value={profileDraft.email} maxLength={80} aria-invalid={!profileValidity.email} onChange={(event) => setProfileDraft({ ...profileDraft, email: event.target.value.replace(/\s/g, '').slice(0, 80) })} required /><small className={profileValidity.email ? '' : 'invalid'}>{text.emailRule}</small></label><label>{text.phone}<input type="tel" inputMode="tel" autoComplete="tel" value={profileDraft.phone} maxLength={22} aria-invalid={!profileValidity.phone} onChange={(event) => setProfileDraft({ ...profileDraft, phone: event.target.value.replace(/[^\d+()\-\s]/g, '').slice(0, 22) })} required /><small className={profileValidity.phone ? '' : 'invalid'}>{text.phoneRule}</small></label></>}
         {kind === 'payment' && <><div className="mock-data-banner"><IconShieldCheck size={18} />{text.mockOnly}</div><label>{text.cardLabel}<input value={paymentDraft.label} onChange={(event) => setPaymentDraft({ ...paymentDraft, label: event.target.value })} required /></label><label>{text.lastFour}<input inputMode="numeric" value={paymentDraft.last4} maxLength={4} onChange={(event) => setPaymentDraft({ ...paymentDraft, last4: event.target.value.replace(/\D/g, '').slice(0, 4) })} required pattern="\d{4}" /></label></>}
         {kind === 'licence' && <><label>{text.licenceNumber}<input value={licenceDraft.number} onChange={(event) => setLicenceDraft({ ...licenceDraft, number: event.target.value })} required /></label><label>{text.expiry}<input value={licenceDraft.expiry} onChange={(event) => setLicenceDraft({ ...licenceDraft, expiry: event.target.value })} placeholder="08/2030" required /></label><label className="verification-toggle"><input type="checkbox" checked={licenceDraft.verified} onChange={(event) => setLicenceDraft({ ...licenceDraft, verified: event.target.checked })} /><span><IconCheck size={16} /></span>{text.verifiedStatus}</label></>}
@@ -562,37 +773,72 @@ function AccountSheet({ kind, locale, reduceMotion, profile, payment, licence, n
   </motion.div>;
 }
 
-function DetailHeader({ title, subtitle, backLabel, onClose }: { title: string; subtitle: string; backLabel: string; onClose: () => void }) {
-  return <header className="trip-detail-header"><motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={backLabel}><IconArrowLeft size={22} /></motion.button><div><span>{subtitle}</span><h2>{title}</h2></div><span className="header-spacer" /></header>;
+function DetailHeader({ title, subtitle, backLabel, onClose, actionLabel, onAction }: { title: string; subtitle: string; backLabel: string; onClose: () => void; actionLabel?: string; onAction?: () => void }) {
+  return <header className="trip-detail-header"><motion.button whileTap={{ scale: .9 }} onClick={onClose} aria-label={backLabel}><IconArrowLeft size={22} /></motion.button><div><span>{subtitle}</span><h2>{title}</h2></div>{actionLabel && onAction ? <motion.button className="header-text-action" whileTap={{ opacity: .55 }} onClick={onAction}>{actionLabel}</motion.button> : <span className="header-spacer" />}</header>;
 }
 
-function ReservationDetail({ reservation, car, payment, reduceMotion, onClose, onModify, onCancel, onAdvance, onExtend, locale }: { reservation: Reservation; car: Car; payment: PaymentData; reduceMotion: boolean; onClose: () => void; onModify: () => void; onCancel: () => void; onAdvance: () => void; onExtend: () => void; locale: Locale }) {
-  const [confirmCancel, setConfirmCancel] = useState(false);
+function ActiveRentalDetail({ reservation, car, reduceMotion, backLabel, onClose, onComplete, locale }: { reservation: Reservation; car: Car; reduceMotion: boolean; backLabel: string; onClose: () => void; onComplete: () => void; locale: Locale }) {
+  const swipeRef = useHorizontalGestureLock<HTMLElement>();
+  const [locked, setLocked] = useState(false);
+  const [lightsOn, setLightsOn] = useState(false);
+  const [supportReady, setSupportReady] = useState(false);
   const copy = getCopy(locale);
   const text = featureText[locale];
   const endDate = addDaysISO(reservation.startDate, reservation.days);
-  const remainingDays = Math.max(0, daysBetweenISO(todayISO(), endDate));
-  const canModify = reservation.status === 'confirmed' || reservation.status === 'ready';
-  const lifecycleAction = reservation.status === 'confirmed' ? text.preparePickup : reservation.status === 'ready' ? text.startRental : reservation.status === 'active' ? text.completeRental : text.close;
-  return <motion.section className="trip-overlay reservation-detail" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} aria-labelledby="reservation-detail-title">
-    <DetailHeader title={copy.reservation} subtitle={statusLabel(locale, reservation.status)} backLabel={copy.backTrips} onClose={onClose} />
-    <div className="trip-overlay-content">
-      <section className={`reservation-status lifecycle-status status-${reservation.status}`}><span className="completion-mark">{reservation.status === 'active' ? <IconCar size={22} /> : <IconCheck size={22} />}</span><div><p>{statusLabel(locale, reservation.status)}</p><h2 id="reservation-detail-title">{formatRentalDate(reservation.startDate, locale)} → {formatRentalDate(endDate, locale)}</h2><small>{dayCount(locale, reservation.days)} · {copy.confirmation} {reservation.confirmation}</small></div></section>
-      {reservation.status === 'active' && <section className="active-rental-summary"><div><span>{dayCount(locale, remainingDays)}</span><small>{text.remaining}</small></div><div><span>{formatRentalDate(endDate, locale)}</span><small>{text.returnBy}</small></div></section>}
-      <div className="reservation-car reservation-detail-car"><img draggable={false} src={car.image} alt="" /><div><span>{carTypeLabel(locale, car.type)}</span><strong>{car.name}</strong><small>{car.plate} · ₽{car.price.toLocaleString('ru-RU')}/{locale === 'ru' ? 'сутки' : 'day'}</small></div></div>
-      <section className="detail-block"><h3>{reservation.status === 'active' ? text.returnLocation : copy.pickupInstructions}</h3><div className="pickup-instructions"><span className="row-icon blue"><IconMapPin size={18} /></span><div><strong>{copy.centralGroznyZone}</strong><p>{reservation.status === 'active' ? `${text.returnBy} ${formatRentalDate(endDate, locale)} · 10:00` : copy.arriveBeforePickup}</p><small><IconId size={15} /> {copy.bringLicence}</small></div></div></section>
-      <section className="detail-block"><h3>{copy.mockReceipt}</h3><div className="receipt-list"><div><span>{copy.rental} · {dayCount(locale, reservation.days)}</span><b>₽{reservation.total.toLocaleString('ru-RU')}</b></div><div><span>{payment.label} ·· {payment.last4}</span><b>{copy.testPayment}</b></div><div><span>{copy.refundableDeposit}</span><b>₽0</b></div><div><span>{copy.total}</span><b>₽{reservation.total.toLocaleString('ru-RU')}</b></div></div><p className="mock-receipt-note"><IconShieldCheck size={16} /> {copy.developmentReceipt}</p></section>
-      <p className="mock-lifecycle-note">{text.mockLifecycle}</p>
-      <div className="reservation-actions"><motion.button className="lifecycle-action" whileTap={{ scale: .98 }} transition={spring} onClick={reservation.status === 'completed' ? onClose : onAdvance}>{lifecycleAction}</motion.button>{canModify && <motion.button className={`cancel-reservation ${confirmCancel ? 'confirming' : ''}`} whileTap={{ scale: .98 }} transition={spring} onClick={() => confirmCancel ? onCancel() : setConfirmCancel(true)}>{confirmCancel ? copy.tapAgainCancel : copy.cancelReservation}</motion.button>}</div>
+  const remainingDays = Math.max(0, Math.min(reservation.days, daysBetweenISO(todayISO(), endDate)));
+  return <motion.section ref={swipeRef} className="trip-overlay active-rental-page horizontal-swipe-surface" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} drag={reduceMotion ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0, right: .2 }} dragDirectionLock onDragEnd={(_, info) => { if (shouldSwipeBack(info)) onClose(); }} aria-labelledby="active-rental-title">
+    <DetailHeader title={car.name} subtitle={text.active} backLabel={backLabel} onClose={onClose} />
+    <div className="active-rental-content">
+      <section className="active-drive-card">
+        <div className="active-drive-status"><i /><span>{text.activeNow}</span><small>{reservation.confirmation}</small></div>
+        <img draggable={false} src={car.image} alt="" />
+        <div className="active-drive-copy"><span>{carTypeLabel(locale, car.type)}</span><h1 id="active-rental-title">{car.name}</h1><p>{car.plate} · {copy.centralGrozny}</p></div>
+      </section>
+      <section className="active-time-card"><div><small>{text.remaining}</small><strong>{dayCount(locale, remainingDays)}</strong></div><div><small>{text.returnBy}</small><strong>{formatRentalDate(endDate, locale)} · {formatPickupTime(reservation.pickupTime, locale)}</strong></div></section>
+      <section className="active-control-section"><h3>{text.vehicleControls}</h3><div className="active-control-grid">
+        <motion.button className={locked ? 'enabled' : ''} whileTap={{ scale: .96 }} aria-pressed={locked} onClick={() => { setLocked((value) => !value); triggerHaptic('impact'); }}>{locked ? <IconLock size={21} /> : <IconLockOpen size={21} />}<span>{locked ? text.unlockCar : text.lockCar}</span></motion.button>
+        <motion.button className={lightsOn ? 'enabled' : ''} whileTap={{ scale: .96 }} aria-pressed={lightsOn} onClick={() => { setLightsOn((value) => !value); triggerHaptic('impact'); }}><IconBulb size={21} /><span>{text.lights}</span></motion.button>
+        <motion.button className={supportReady ? 'enabled' : ''} whileTap={{ scale: .96 }} aria-pressed={supportReady} onClick={() => { setSupportReady((value) => !value); triggerHaptic('impact'); }}><IconPhone size={21} /><span>{text.support}</span></motion.button>
+      </div></section>
+      <section className="active-return-card"><div className="active-route-visual" aria-hidden="true"><span><IconCar size={18} /></span><i /><span><IconMapPin size={18} /></span></div><div><small>{text.routeBack}</small><strong>{copy.centralGroznyZone}</strong><p>{text.returnBy} {formatRentalDate(endDate, locale)} · {formatPickupTime(reservation.pickupTime, locale)}</p></div><IconRoute size={21} /></section>
+      <p className="active-safety-note"><IconShieldCheck size={17} /> {copy.tripSupport}</p>
     </div>
-    {canModify && <motion.button className="modify-reservation reservation-floating-action" whileTap={{ scale: .98 }} transition={spring} onClick={onModify}>{copy.modifyReservation}</motion.button>}
-    {reservation.status === 'active' && <motion.button className="modify-reservation reservation-floating-action" whileTap={{ scale: .98 }} transition={spring} onClick={onExtend}><IconPlus size={18} />{text.extendRental}</motion.button>}
+    <footer className="active-rental-footer"><motion.button className="primary-action" whileTap={{ scale: .98 }} onClick={onComplete}>{text.completeRental}</motion.button></footer>
+  </motion.section>;
+}
+
+function ReservationDetail({ reservation, car, payment, reduceMotion, backLabel, onClose, onModify, onAdvance, locale }: { reservation: Reservation; car: Car; payment: PaymentData; reduceMotion: boolean; backLabel?: string; onClose: () => void; onModify: () => void; onAdvance: () => void; locale: Locale }) {
+  const swipeRef = useHorizontalGestureLock<HTMLElement>();
+  const copy = getCopy(locale);
+  const text = featureText[locale];
+  const endDate = addDaysISO(reservation.startDate, reservation.days);
+  const pickupTimeLabel = formatPickupTime(reservation.pickupTime, locale);
+  const rentalFee = car.price * reservation.days;
+  const pickupWaitFee = Math.max(0, reservation.total - rentalFee);
+  const canModify = reservation.status === 'confirmed' || reservation.status === 'ready';
+  const lifecycleAction = reservation.status === 'confirmed' || reservation.status === 'ready' ? text.startRental : text.close;
+  if (reservation.status === 'active') return <ActiveRentalDetail reservation={reservation} car={car} reduceMotion={reduceMotion} backLabel={backLabel ?? copy.backTrips} onClose={onClose} onComplete={onAdvance} locale={locale} />;
+  return <motion.section ref={swipeRef} className="trip-overlay reservation-detail horizontal-swipe-surface" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} drag={reduceMotion ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0, right: .2 }} dragDirectionLock onDragEnd={(_, info) => { if (shouldSwipeBack(info)) onClose(); }} aria-labelledby="reservation-detail-title">
+    <DetailHeader title={copy.reservation} subtitle={statusLabel(locale, reservation.status)} backLabel={backLabel ?? copy.backTrips} onClose={onClose} actionLabel={canModify ? copy.modifyReservation : undefined} onAction={canModify ? onModify : undefined} />
+    <div className="trip-overlay-content">
+      <section className={`reservation-overview lifecycle-status status-${reservation.status}`}>
+        <div className="reservation-overview-status"><span className="completion-mark"><IconCheck size={20} /></span><div><p>{statusLabel(locale, reservation.status)}</p><small>{copy.confirmation} {reservation.confirmation}</small></div></div>
+        <div className="reservation-overview-dates"><h2 id="reservation-detail-title">{formatRentalDate(reservation.startDate, locale)} → {formatRentalDate(endDate, locale)}</h2><span>{dayCount(locale, reservation.days)}</span></div>
+        <div className="reservation-overview-car"><img draggable={false} src={car.image} alt="" /><div><span>{carTypeLabel(locale, car.type)}</span><strong>{car.name}</strong><small>{car.plate} · ₽{car.price.toLocaleString('ru-RU')}/{locale === 'ru' ? 'сутки' : 'day'}</small></div></div>
+      </section>
+      <section className="detail-block"><h3>{copy.pickupInstructions}</h3><div className="pickup-instructions"><span className="row-icon blue"><IconMapPin size={18} /></span><div><strong>{copy.centralGroznyZone}</strong><p>{locale === 'ru' ? 'Получение' : 'Pickup'} {formatRentalDate(reservation.startDate, locale)} · {pickupTimeLabel}</p><small><IconId size={15} /> {copy.bringLicence}</small></div></div></section>
+      <section className="detail-block"><h3>{copy.paymentSummary}</h3><div className="receipt-list"><div><span>{copy.rental} · {dayCount(locale, reservation.days)}</span><b>₽{rentalFee.toLocaleString('ru-RU')}</b></div>{pickupWaitFee > 0 && <div><span>{locale === 'ru' ? 'Ожидание получения' : 'Pickup wait'}</span><b>₽{pickupWaitFee.toLocaleString('ru-RU')}</b></div>}<div><span>{payment.label} ·· {payment.last4}</span><b className="payment-paid"><IconCheck size={14} /> {copy.paid}</b></div><div><span>{copy.refundableDeposit}</span><b>₽0</b></div><div><span>{copy.total}</span><b>₽{reservation.total.toLocaleString('ru-RU')}</b></div></div></section>
+    </div>
+    <footer className="reservation-action-bar">
+      <motion.button className="primary-action lifecycle-action" whileTap={{ scale: .98 }} transition={spring} onClick={reservation.status === 'completed' ? onClose : onAdvance}>{lifecycleAction}</motion.button>
+    </footer>
   </motion.section>;
 }
 
 function TripDetail({ trip, reduceMotion, onClose, locale }: { trip: Trip; reduceMotion: boolean; onClose: () => void; locale: Locale }) {
+  const swipeRef = useHorizontalGestureLock<HTMLElement>();
   const copy = getCopy(locale);
-  return <motion.section className="trip-overlay" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} aria-labelledby="trip-detail-title">
+  return <motion.section ref={swipeRef} className="trip-overlay trip-detail-page horizontal-swipe-surface" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} drag={reduceMotion ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0, right: .2 }} dragDirectionLock onDragEnd={(_, info) => { if (shouldSwipeBack(info)) onClose(); }} aria-labelledby="trip-detail-title">
     <DetailHeader title={copy.tripReceipt} subtitle={`${tripDate(locale, trip.date)} → ${tripDate(locale, trip.endDate)}`} backLabel={copy.backTrips} onClose={onClose} />
     <div className="trip-overlay-content">
       <section className="trip-total"><span className="completion-mark"><IconCheck size={22} /></span><p>{copy.completed}</p><strong>₽{trip.price.toLocaleString('ru-RU')}</strong><small>{trip.car} · {dayCount(locale, trip.days)}</small></section>
@@ -605,13 +851,14 @@ function TripDetail({ trip, reduceMotion, onClose, locale }: { trip: Trip; reduc
 }
 
 function FinanceDetail({ totalSpend, totalDays, totalDistance, reduceMotion, onClose, onSelectTrip, locale }: { totalSpend: number; totalDays: number; totalDistance: number; reduceMotion: boolean; onClose: () => void; onSelectTrip: (trip: Trip) => void; locale: Locale }) {
+  const swipeRef = useHorizontalGestureLock<HTMLElement>();
   const budget = 40000;
   const rentalSpend = trips.reduce((sum, trip) => sum + trip.rentalFee, 0);
   const extrasSpend = trips.reduce((sum, trip) => sum + trip.extras, 0);
   const rentalShare = Math.round(rentalSpend / totalSpend * 100);
   const extrasShare = 100 - rentalShare;
   const copy = getCopy(locale);
-  return <motion.section className="trip-overlay" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} aria-labelledby="finance-title">
+  return <motion.section ref={swipeRef} className="trip-overlay finance-detail-page horizontal-swipe-surface" initial={reduceMotion ? { opacity: 0 } : { x: '100%' }} animate={{ x: 0, opacity: 1 }} exit={reduceMotion ? { opacity: 0 } : { x: '100%' }} transition={spring} drag={reduceMotion ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0, right: .2 }} dragDirectionLock onDragEnd={(_, info) => { if (shouldSwipeBack(info)) onClose(); }} aria-labelledby="finance-title">
     <DetailHeader title={copy.tripActivity} subtitle={copy.augustOverview} backLabel={copy.backTrips} onClose={onClose} />
     <div className="trip-overlay-content finance-content">
       <section className="finance-hero"><span>{copy.spentMonth}</span><strong>₽{totalSpend.toLocaleString('ru-RU')}</strong><p>₽{Math.round(totalSpend / trips.length).toLocaleString('ru-RU')} {copy.averageTrip}</p><div className="budget-label"><span>{copy.monthlyBudget}</span><b>₽{totalSpend.toLocaleString('ru-RU')} {copy.of} ₽{budget.toLocaleString('ru-RU')}</b></div><div className="budget-track"><motion.i initial={{ width: 0 }} animate={{ width: `${Math.min(100, totalSpend / budget * 100)}%` }} transition={spring} /></div><small>₽{Math.max(0, budget - totalSpend).toLocaleString('ru-RU')} {copy.remaining}</small></section>
@@ -642,6 +889,10 @@ function isValidRentalDays(days: unknown): days is number {
   return typeof days === 'number' && Number.isInteger(days) && days >= 1 && days <= 30;
 }
 
+function isValidPickupTime(time: unknown): time is string {
+  return typeof time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
+}
+
 function addDaysISO(date: string, days: number) {
   const value = parseISODate(date);
   if (!value || !Number.isInteger(days) || days < 0 || days > 30) return '';
@@ -668,6 +919,18 @@ function formatPickupDate(date: string, locale: Locale) {
   return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(value);
 }
 
-function createReservation(car: Car, startDate: string, days: number, confirmation = `CR-${String(Date.now()).slice(-6)}`): Reservation {
-  return { carId: car.id, startDate, days, total: car.price * days, confirmation, status: 'confirmed' };
+function formatPickupTime(time: string, locale: Locale) {
+  if (!isValidPickupTime(time)) return '10:00';
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }).format(new Date(`2000-01-01T${time}:00Z`));
+}
+
+function reservationPriceBreakdown(car: Car, startDate: string, days: number, bookedOn = todayISO()) {
+  const waitDays = Math.max(0, daysBetweenISO(bookedOn, startDate));
+  const rentalFee = car.price * days;
+  const pickupWaitFee = waitDays * pickupWaitDailyFee;
+  return { waitDays, rentalFee, pickupWaitFee, total: rentalFee + pickupWaitFee };
+}
+
+function createReservation(car: Car, startDate: string, pickupTime: string, days: number, confirmation = `CR-${String(Date.now()).slice(-6)}`, bookedOn = todayISO()): Reservation {
+  return { carId: car.id, startDate, pickupTime, days, total: reservationPriceBreakdown(car, startDate, days, bookedOn).total, bookedOn, confirmation, status: 'confirmed' };
 }
