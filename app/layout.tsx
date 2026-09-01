@@ -23,14 +23,19 @@ export const metadata: Metadata = {
   title: 'CarShare — your next car is nearby',
   description: 'Find, reserve, and drive nearby cars by the minute.',
   icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'CarShare' },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: light)', color: '#f2f2f7' },
+  ],
 };
 
 export default function RootLayout({
