@@ -6,24 +6,13 @@ import {
   IconAlertTriangle, IconBellRinging, IconCheck, IconDownload, IconExternalLink,
   IconMap2, IconMessageCircle, IconPhoto, IconSend, IconStar, IconX,
 } from '@tabler/icons-react';
-import type { Car, Trip } from '../carshare-domain';
+import type { Trip } from '../carshare-domain';
 
 const productSpring = { type: 'spring' as const, stiffness: 420, damping: 38, mass: .86 };
 const groznyCoordinates = '43.3187,45.6946';
 
 export function openPickupNavigation() {
   window.open(`https://maps.apple.com/?daddr=${groznyCoordinates}&dirflg=d`, '_blank', 'noopener,noreferrer');
-}
-
-export function FleetMap({ cars, locale, onSelect }: { cars: Car[]; locale: 'en' | 'ru'; onSelect: (id: number) => void }) {
-  return <section className="fleet-map" aria-labelledby="fleet-map-title">
-    <header><div><span>{locale === 'ru' ? 'ЦЕНТР ГРОЗНОГО' : 'CENTRAL GROZNY'}</span><h2 id="fleet-map-title">{locale === 'ru' ? 'Карта автомобилей' : 'Vehicle map'}</h2></div><small><i />{locale === 'ru' ? 'Обновлено сейчас' : 'Updated now'}</small></header>
-    <div className="fleet-map-canvas">
-      <iframe title={locale === 'ru' ? 'Карта автомобилей в центре Грозного' : 'Vehicle map in Central Grozny'} loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=45.66%2C43.29%2C45.73%2C43.35&layer=mapnik&marker=43.3187%2C45.6946" />
-      <div className="fleet-map-shade" />
-      {cars.slice(0, 5).map((car, index) => <motion.button key={car.id} type="button" className={`fleet-map-pin pin-${index + 1}`} whileTap={{ scale: .9 }} onClick={() => onSelect(car.id)} aria-label={`${locale === 'ru' ? 'Открыть' : 'Open'} ${car.name}`}><span>{car.name.split(' ')[0]}</span><b>₽{car.price.toLocaleString('ru-RU')}</b></motion.button>)}
-    </div>
-  </section>;
 }
 
 export function PickupNavigationButton({ locale, label }: { locale: 'en' | 'ru'; label?: string }) {
@@ -42,7 +31,7 @@ export function NotificationPermissionRow({ locale, onStatus }: { locale: 'en' |
     } else onStatus(locale === 'ru' ? 'Разрешение не предоставлено' : 'Permission was not granted');
   };
   const enabled = permission === 'granted';
-  return <button type="button" onClick={enable} disabled={enabled || permission === 'unsupported'}><span className="row-icon notification"><IconBellRinging size={18} /></span><div><strong>{locale === 'ru' ? 'Push-уведомления' : 'Push notifications'}</strong><small>{enabled ? (locale === 'ru' ? 'Включены' : 'Enabled') : permission === 'unsupported' ? (locale === 'ru' ? 'Недоступны' : 'Unavailable') : (locale === 'ru' ? 'Напоминания о получении и возврате' : 'Pickup and return reminders')}</small></div>{enabled ? <IconCheck size={18} /> : <span className="settings-value">{locale === 'ru' ? 'Включить' : 'Enable'}</span>}</button>;
+  return <button className="notification-permission-row" type="button" onClick={enable} disabled={enabled || permission === 'unsupported'}><span className="row-icon notification"><IconBellRinging size={18} /></span><div><strong>{locale === 'ru' ? 'Push-уведомления' : 'Push notifications'}</strong><small>{enabled ? (locale === 'ru' ? 'Включены' : 'Enabled') : permission === 'unsupported' ? (locale === 'ru' ? 'Недоступны' : 'Unavailable') : (locale === 'ru' ? 'Напоминания о получении и возврате' : 'Pickup and return reminders')}</small></div>{enabled ? <IconCheck className="notification-permission-check" size={18} /> : <b className="settings-value">{locale === 'ru' ? 'Включить' : 'Enable'}</b>}</button>;
 }
 
 export function SupportSheet({ locale, onClose }: { locale: 'en' | 'ru'; onClose: () => void }) {

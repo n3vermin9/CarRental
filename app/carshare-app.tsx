@@ -21,7 +21,7 @@ import {
 } from './carshare-domain';
 import { AppLoading, CarImage, OfflineBanner, StatusToast } from './components/app-system';
 import {
-  DamageReportSheet, FleetMap, NotificationPermissionRow, PickupNavigationButton,
+  DamageReportSheet, NotificationPermissionRow, PickupNavigationButton,
   RatingControl, ReceiptDownloadButton, SupportSheet,
 } from './components/product-tools';
 
@@ -503,7 +503,6 @@ export default function CarShareApp({ initialTab = 'explore', initialCarId = nul
               <div className="title-block"><button className="location-label"><IconNavigation size={13} fill="currentColor" /> {copy.grozny} <IconChevronRight size={14} /></button><h1 id="fleet-title">{copy.availableNearby}</h1><p>{visibleCars.length} {copy.readyToDrive}</p></div>
               <div className={`search-row ${exploreScrolled ? 'scrolled' : ''}`}><div className="apple-search"><IconSearch size={19} /><input ref={searchInputRef} value={query} onChange={(event) => setQuery(event.target.value)} aria-label={copy.searchAvailableCars} placeholder={copy.searchCars} /><AnimatePresence>{query && <motion.button type="button" className="search-clear" aria-label={copy.clearSearch} onClick={(event) => { event.preventDefault(); setQuery(''); searchInputRef.current?.blur(); event.currentTarget.blur(); }} initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: .72, x: 6 }} transition={spring} whileTap={{ scale: .86 }}><IconX size={14} strokeWidth={2.4} /></motion.button>}</AnimatePresence></div><button className={`filter-button ${activeFilterCount ? 'active' : ''}`} aria-label={copy.adjustFilters} onClick={() => setShowFilterSheet(true)}><IconAdjustmentsHorizontal size={21} />{activeFilterCount > 0 && <span>{activeFilterCount}</span>}</button></div>
               <div className="apple-filters" aria-label={copy.taxiFilters}>{filters.map((item) => <motion.button key={item} onClick={(event) => changeFilter(item, event.currentTarget)} className={filter === item ? 'active' : ''} whileTap={{ scale: .96 }} transition={spring}>{item === 'All' ? copy.allCars : carTypeLabel(locale, item)}</motion.button>)}</div>
-              <FleetMap cars={visibleCars} locale={locale} onSelect={openCarDetails} />
               <div className="section-heading"><h2>{copy.closestCars}</h2></div>
               <div className="vehicle-list">
                 <AnimatePresence initial={false} mode="wait">
